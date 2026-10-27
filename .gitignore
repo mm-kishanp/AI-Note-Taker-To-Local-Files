@@ -1,0 +1,44 @@
+# .NET
+bin/
+obj/
+*.user
+*.suo
+.vs/
+TestResults/
+*.trx
+
+# Local runtime state (contains meeting content - never commit)
+data/
+*.db
+*.db-shm
+*.db-wal
+logs/
+GranolaProjectKnowledge/
+
+# Frontend
+node_modules/
+frontend/dist/
+frontend/coverage/
+frontend/test-results/
+frontend/playwright-report/
+
+# Secrets
+.env
+.env.*
+!.env.example
+appsettings.*.local.json
+tools/node-cli/config.json
+tools/node-cli/.granola-sync-state.json
+tools/node-cli/output/
+
+# OS / editors
+.DS_Store
+Thumbs.db
+.idea/
+
+# Claude Code personal settings
+.claude/settings.local.json
+.e2e/
+
+# Built UI (produced by scripts/build-frontend.ps1)
+src/GranolaPI.Api/wwwroot/

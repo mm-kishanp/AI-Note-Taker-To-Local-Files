@@ -1,0 +1,37 @@
+{
+  "apiKey": "",
+
+  "output": {
+    "notesDir": "./output/Notes",
+    "transcriptsDir": "./output/Transcripts",
+    "unassignedFolder": "_Unassigned",
+    "pathTemplate": "{project}/{yyyy}/{MM}",
+    "fileNameTemplate": "{yyyy}-{MM}-{dd} {title}",
+    "saveNotes": true,
+    "saveTranscripts": true
+  },
+
+  "matching": {
+    "sources": ["speakers", "attendees", "invitees", "granolaFolders"]
+  },
+
+  "sync": {
+    "createdAfter": "2026-01-01",
+    "stateFile": "./.granola-sync-state.json"
+  },
+
+  "projects": [
+    {
+      "name": "Incent",
+      "folder": "Clients/Incent",
+      "speakers": ["John Smith", "Jane Doe"],
+      "emails": ["john@incent.com", "@incent.com"],
+      "granolaFolders": ["Incent"]
+    },
+    {
+      "name": "Website Revamp",
+      "speakers": ["Alice Brown"],
+      "emails": ["alice@example.com"]
+    }
+  ]
+}

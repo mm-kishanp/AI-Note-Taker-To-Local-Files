@@ -1,0 +1,16 @@
+{
+  "name": "granola-sync",
+  "version": "1.0.0",
+  "description": "Export Granola meeting notes and transcripts to Markdown, filed into folders by project",
+  "main": "granola-sync.js",
+  "bin": { "granola-sync": "granola-sync.js" },
+  "scripts": {
+    "sync": "node granola-sync.js",
+    "dry-run": "node granola-sync.js --dry-run",
+    "discover": "node granola-sync.js --discover",
+    "test": "node test/smoke.test.js"
+  },
+  "engines": { "node": ">=18" },
+  "license": "UNLICENSED",
+  "private": true
+}

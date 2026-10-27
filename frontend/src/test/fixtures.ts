@@ -1,0 +1,58 @@
+import type { CredentialStatusDto, MeetingListItemDto, ProjectDto } from '../types/api';
+
+export const meeting = (over: Partial<MeetingListItemDto> = {}): MeetingListItemDto => ({
+  id: '11111111-1111-1111-1111-111111111111',
+  granolaNoteId: 'not_aaaaaaaaaaaaaa',
+  title: 'Client Requirement Discussion',
+  meetingDate: '2026-10-26T10:00:00Z',
+  participants: ['Alice Client', 'Kishan Parmar'],
+  projectId: null,
+  projectName: null,
+  clientName: null,
+  classificationStatus: 'Unassigned',
+  assignmentMethod: 'None',
+  certainty: 'None',
+  needsReview: true,
+  notesStatus: 'Available',
+  transcriptStatus: 'Available',
+  exportStatus: 'Exported',
+  sourceStatus: 'Active',
+  lastSyncedAt: '2026-10-26T11:00:00Z',
+  lastError: null,
+  ...over,
+});
+
+export const project = (over: Partial<ProjectDto> = {}): ProjectDto => ({
+  id: '22222222-2222-2222-2222-222222222222',
+  name: 'Motor Dealer App',
+  slug: 'MotorDealerApp',
+  description: null,
+  clientId: null,
+  clientName: null,
+  status: 'Active',
+  notesFolderPath: null,
+  transcriptFolderPath: null,
+  defaultClassificationPriority: 100,
+  rules: [],
+  meetingCount: 0,
+  lastMeetingAt: null,
+  resolvedNotesDirectory: 'C:/K/Projects/MotorDealerApp/Notes',
+  resolvedTranscriptsDirectory: 'C:/K/Projects/MotorDealerApp/Transcripts',
+  createdAt: '2026-10-26T10:00:00Z',
+  updatedAt: '2026-10-26T10:00:00Z',
+  ...over,
+});
+
+export const credential = (over: Partial<CredentialStatusDto> = {}): CredentialStatusDto => ({
+  configured: true,
+  source: 'Windows Credential Manager',
+  maskedKey: 'grn_••••••••wxyz',
+  canStore: true,
+  storeName: 'Windows Credential Manager',
+  lastCheckSucceeded: true,
+  lastCheckedAt: '2026-10-26T10:00:00Z',
+  lastSuccessAt: '2026-10-26T10:00:00Z',
+  lastError: null,
+  lastErrorCategory: 'None',
+  ...over,
+});

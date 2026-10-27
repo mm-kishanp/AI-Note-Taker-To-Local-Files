@@ -1,0 +1,59 @@
+{
+  "version": 1,
+  "clients": [
+    {
+      "name": "Example Client B",
+      "description": "Illustrative client with two projects. Meetings with this client go to review unless a project rule decides.",
+      "rules": [
+        { "kind": "EmailDomain", "value": "@client-b.example", "enabled": true }
+      ]
+    }
+  ],
+  "projects": [
+    {
+      "id": null,
+      "name": "Motor Dealer App",
+      "slug": "MotorDealerApp",
+      "description": "Illustrative project. Replace names, emails and keywords with your own.",
+      "clientName": null,
+      "status": "Active",
+      "notesFolder": null,
+      "transcriptsFolder": null,
+      "priority": 100,
+      "rules": [
+        { "kind": "Email", "value": "contact@client-a.example", "enabled": true },
+        { "kind": "SpeakerName", "value": "Example Client A", "enabled": true },
+        { "kind": "TitleKeyword", "value": "dealer", "enabled": true }
+      ]
+    },
+    {
+      "id": null,
+      "name": "FilmWale",
+      "slug": "FilmWale",
+      "description": "Illustrative project for Example Client B.",
+      "clientName": "Example Client B",
+      "status": "Active",
+      "notesFolder": null,
+      "transcriptsFolder": null,
+      "priority": 100,
+      "rules": [
+        { "kind": "TitleKeyword", "value": "filmwale", "enabled": true }
+      ]
+    },
+    {
+      "id": null,
+      "name": "Premiere Management",
+      "slug": "PremiereManagement",
+      "description": "Second illustrative project for Example Client B.",
+      "clientName": "Example Client B",
+      "status": "Active",
+      "notesFolder": "Clients/{ClientName}/{ProjectSlug}/Notes",
+      "transcriptsFolder": "Clients/{ClientName}/{ProjectSlug}/Transcripts",
+      "priority": 100,
+      "rules": [
+        { "kind": "Keyword", "value": "premiere", "enabled": true },
+        { "kind": "GranolaFolder", "value": "Premiere Calls", "enabled": true }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,52 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+  checks: write
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+      - name: Restore
+        run: dotnet restore GranolaProjectIntelligence.sln
+      - name: Format check
+        run: dotnet format GranolaProjectIntelligence.sln --verify-no-changes --severity error --no-restore
+      - name: Build
+        run: dotnet build GranolaProjectIntelligence.sln -c Release --no-restore
+      - name: Unit and integration tests (no external credentials needed)
+        run: dotnet test GranolaProjectIntelligence.sln -c Release --no-build --logger "trx;LogFilePrefix=results" --results-directory TestResults
+      - name: Publish test results
+        if: always()
+        uses: dorny/test-reporter@v1
+        with:
+          name: .NET tests
+          path: TestResults/*.trx
+          reporter: dotnet-trx
+
+  frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - name: Type-check and build
+        run: npm run build
+      - name: Unit tests
+        run: npm test

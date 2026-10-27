@@ -1,0 +1,45 @@
+{
+  "export": {
+    "rootDirectory": "./GranolaProjectKnowledge",
+    "notesRootDirectory": null,
+    "transcriptsRootDirectory": null,
+    "projectDirectoryTemplate": "Projects/{ProjectSlug}",
+    "notesDirectoryTemplate": "{ProjectDirectory}/Notes",
+    "transcriptsDirectoryTemplate": "{ProjectDirectory}/Transcripts",
+    "unassignedNotesDirectory": "Unassigned/Notes",
+    "unassignedTranscriptsDirectory": "Unassigned/Transcripts",
+    "sharedNotesDirectory": "Shared/Notes",
+    "sharedTranscriptsDirectory": "Shared/Transcripts",
+    "filenameTemplate": "{MeetingDate}-{MeetingTitle}",
+    "exportNotes": true,
+    "exportTranscripts": true,
+    "includeAttachmentLinks": true,
+    "conflictPolicy": "PreserveUserEdits",
+    "moveFilesOnReassignment": true,
+    "generateProjectContext": true,
+    "generateReviewQueue": true
+  },
+  "sync": {
+    "autoSyncEnabled": false,
+    "intervalMinutes": 30,
+    "initialImportFrom": null,
+    "maxConcurrency": 2,
+    "maxRequestAttempts": 5,
+    "maxMeetingRetries": 5,
+    "incrementalOverlapMinutes": 10
+  },
+  "classification": {
+    "tierOrder": ["ParticipantEmail", "ParticipantIdentity", "SpeakerIdentity", "Client", "Metadata", "Keyword", "Ai"],
+    "disabledTiers": [],
+    "multiProjectMode": "SingleProject",
+    "ignoreOwner": true,
+    "useCalendarInvitees": true,
+    "minimumSpeakerSegments": 1,
+    "ai": { "enabled": false, "provider": "anthropic", "model": "claude-opus-5-5", "autoAssign": false, "includeSummary": false }
+  },
+  "logging": {
+    "minimumLevel": "Information",
+    "logDirectory": "./data/logs",
+    "retentionDays": 14
+  }
+}
