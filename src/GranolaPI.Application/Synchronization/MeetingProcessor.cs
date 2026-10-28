@@ -1,5 +1,6 @@
 using GranolaPI.Application.Classification;
 using GranolaPI.Application.Export;
+using GranolaPI.Application.Fireflies;
 using GranolaPI.Application.Granola;
 using GranolaPI.Application.Interfaces;
 using GranolaPI.Application.Meetings;
@@ -10,7 +11,8 @@ using Microsoft.Extensions.Logging;
 
 namespace GranolaPI.Application.Synchronization;
 
-public sealed record WorkItem(string GranolaNoteId, bool Fetch, Guid? MeetingId = null);
+/// <param name="GranolaNoteId">The source's ID: a Granola note ID or a Fireflies transcript ID.</param>
+public sealed record WorkItem(string GranolaNoteId, bool Fetch, Guid? MeetingId = null, MeetingSource Source = MeetingSource.Granola);
 
 public sealed record ProcessResult(Guid? MeetingId, string Outcome, ErrorCategory Category, bool Retryable, string? Message, IReadOnlyList<Guid> ProjectIds)
 {
@@ -24,6 +26,7 @@ public sealed record ProcessResult(Guid? MeetingId, string Outcome, ErrorCategor
 public sealed class MeetingProcessor(
     IAppDbContext db,
     IGranolaApiClient api,
+    IFirefliesApiClient fireflies,
     ClassificationService classification,
     MeetingExporter exporter,
     IClock clock,
@@ -52,7 +55,9 @@ public sealed class MeetingProcessor(
             GranolaNoteFetch? fetched;
             try
             {
-                fetched = await api.GetNoteAsync(item.GranolaNoteId, includeTranscript: true, ct);
+                fetched = item.Source == MeetingSource.Fireflies
+                    ? await fireflies.GetTranscriptAsync(item.GranolaNoteId, ct) is { } call ? FirefliesMapper.ToFetch(call) : null
+                    : await api.GetNoteAsync(item.GranolaNoteId, includeTranscript: true, ct);
             }
             catch (GranolaApiException ex)
             {
@@ -79,7 +84,7 @@ public sealed class MeetingProcessor(
 
             if (meeting is null)
             {
-                meeting = new Meeting { GranolaNoteId = fetched.Note.Id };
+                meeting = new Meeting { GranolaNoteId = fetched.Note.Id, Source = item.Source };
                 db.Meetings.Add(meeting);
             }
             MeetingIngestor.Apply(meeting, fetched, now);

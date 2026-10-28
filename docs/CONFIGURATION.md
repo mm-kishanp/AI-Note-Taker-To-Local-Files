@@ -72,6 +72,7 @@ Existing files keep their paths: export records are sticky, and filenames stay s
 | `maxRequestAttempts` | `5` | Attempts per Granola request for transient errors |
 | `maxMeetingRetries` | `5` | Scheduled retries for a failing meeting before only a manual retry will try again |
 | `incrementalOverlapMinutes` | `10` | Overlap applied to the incremental checkpoint, to tolerate clock skew |
+| `firefliesLookbackDays` | `3` | Fireflies only: incremental runs re-list calls from this many days before the last run, because Fireflies adds transcripts and AI notes after the call (1–60) |
 
 ## Classification
 
@@ -105,6 +106,6 @@ Manage these in the UI, or import and export them as JSON (Projects → Import /
 | `Security:UseWindowsCredentialManager` | `true` | Store keys in Windows Credential Manager |
 | `Security:ApiToken` | *(none)* | When set, every `/api` call except `/api/health` must send `Authorization: Bearer <token>` |
 | `Security:AllowedOrigins` | the Vite dev origins | CORS origins |
-| `GRANOLA_API_KEY`, `ANTHROPIC_API_KEY` | — | Secrets supplied by the environment (server deployments) |
+| `GRANOLA_API_KEY`, `FIREFLIES_API_KEY`, `ANTHROPIC_API_KEY` | — | Secrets supplied by the environment (server deployments) |
 
 Environment variables use `__` as the separator, for example `Security__ApiToken`.

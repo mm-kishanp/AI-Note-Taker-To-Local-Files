@@ -67,6 +67,9 @@ if (app.Environment.IsDevelopment())
 app.UseDefaultFiles();
 app.UseStaticFiles();
 app.MapControllers();
+// Unknown API paths are a 404, never the SPA page (which the UI would misread as data).
+app.MapFallback("/api/{**path}", () => Results.Problem(statusCode: StatusCodes.Status404NotFound, title: "Not found",
+    detail: "This API endpoint does not exist."));
 app.MapFallbackToFile("index.html");
 
 app.Logger.LogInformation("Granola Project Intelligence Sync started. Base directory: {BaseDir}", baseDir);

@@ -20,6 +20,21 @@ public class ApiIntegrationTests : IClassFixture<AppFactory>
     }
 
     [Fact]
+    public async Task Unknown_api_paths_return_404_json_not_the_ui_page()
+    {
+        var res = await _f.CreateClient().GetAsync("/api/settings/credentials/does-not-exist");
+        Assert.Equal(HttpStatusCode.NotFound, res.StatusCode);
+        Assert.Contains("json", res.Content.Headers.ContentType?.MediaType);
+    }
+
+    [Fact]
+    public async Task Api_responses_are_never_cached_by_the_browser()
+    {
+        var res = await _f.CreateClient().GetAsync("/api/health");
+        Assert.True(res.Headers.CacheControl?.NoStore);
+    }
+
+    [Fact]
     public async Task State_changing_requests_require_the_csrf_header()
     {
         var res = await _f.CreateClient().PostAsJsonAsync("/api/sync/start", new { mode = "Incremental" });

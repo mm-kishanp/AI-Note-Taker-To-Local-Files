@@ -45,7 +45,8 @@ public sealed record MeetingListItemDto(
     ExportStatus ExportStatus,
     SourceStatus SourceStatus,
     DateTimeOffset? LastSyncedAt,
-    string? LastError);
+    string? LastError,
+    MeetingSource Source = MeetingSource.Granola);
 
 public sealed record MeetingQuery(
     string? Search = null,
@@ -57,6 +58,7 @@ public sealed record MeetingQuery(
     ExportStatus? ExportStatus = null,
     ContentStatus? TranscriptStatus = null,
     bool? NeedsReview = null,
+    MeetingSource? Source = null,
     string? Sort = "date",
     bool Desc = true,
     int Page = 1,

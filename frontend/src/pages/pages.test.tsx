@@ -1,4 +1,4 @@
-import { screen, waitFor } from '@testing-library/react';
+import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 import { ReassignModal } from '../components/ReassignModal';
@@ -80,6 +80,27 @@ describe('Settings: Granola credentials', () => {
     expect(await screen.findByText('grn_••••••••9999')).toBeInTheDocument();
     await waitFor(() => expect(screen.queryByDisplayValue('grn_new_secret_key_9999')).not.toBeInTheDocument());
     expect(document.body.textContent).not.toContain('grn_new_secret_key_9999');
+  });
+
+  it('configures the Fireflies key separately from the Granola key', async () => {
+    const { calls } = mockFetch([
+      route('GET /api/settings/credentials/granola', credential()),
+      route('GET /api/settings/credentials/fireflies', credential({ configured: false, maskedKey: null, source: null, lastCheckSucceeded: null })),
+      route('PUT /api/settings/credentials/fireflies', credential({ maskedKey: 'ff_k••••••••7890' })),
+    ]);
+    renderWithProviders(<SettingsPage />);
+
+    expect(await screen.findByRole('heading', { name: 'Fireflies connection' })).toBeInTheDocument();
+    const input = await screen.findByLabelText('API key');
+    await userEvent.type(input, 'ff_key_1234567890');
+    const fireflies = screen.getByRole('heading', { name: 'Fireflies connection' }).closest('.mantine-Paper-root') as HTMLElement;
+    await userEvent.click(within(fireflies).getByRole('button', { name: /save & verify/i }));
+
+    await waitFor(() => expect(calls.some((c) => c.method === 'PUT')).toBe(true));
+    const put = calls.find((c) => c.method === 'PUT')!;
+    expect(put.url.pathname).toBe('/api/settings/credentials/fireflies');
+    expect(put.body).toEqual({ apiKey: 'ff_key_1234567890', validate: true });
+    expect(await screen.findByText('ff_k••••••••7890')).toBeInTheDocument();
   });
 });
 

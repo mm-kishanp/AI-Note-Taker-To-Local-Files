@@ -4,7 +4,9 @@ Each failure is recorded with an error category, shown on the meeting page and i
 
 | Symptom / category | Cause | Fix |
 |---|---|---|
-| **Authentication**: "Granola rejected the API key" | The key was revoked, mistyped or expired | Settings → Granola Connection: replace the key, then test it. |
+| **Authentication**: "Granola rejected the API key" | The key was revoked, mistyped or expired | Settings → Connections: replace the key, then test it. |
+| **Authentication**: "Fireflies rejected the API key" | The Fireflies key was regenerated or mistyped | Settings → Connections → Fireflies connection: replace the key. |
+| **Rate limited** (Fireflies) | Free plan: 30 requests/min and 500/day | Syncs resume automatically; lower the sync frequency or use a paid plan. See [FIREFLIES_API.md](FIREFLIES_API.md). |
 | **Permission** | The key lacks a scope, or the workspace has not enabled API access | Recreate the key with the *Personal notes* (and/or *Public notes*) scope. On Enterprise, ask an admin to enable member API access. |
 | Connected, but "no notes visible" | Granola returns only notes that have a generated summary **and** a transcript | Wait for Granola to finish processing, or check that the meeting was recorded. |
 | **RateLimited** | Too many requests (25 per 5 s, 5/s sustained) | Retried automatically, honouring `Retry-After`. Lower `maxConcurrency` if it keeps happening. |

@@ -329,6 +329,11 @@ namespace GranolaPI.Infrastructure.Persistence.Migrations
                         .IsRequired()
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("Source")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("SourceContentHash")
                         .HasColumnType("TEXT");
 

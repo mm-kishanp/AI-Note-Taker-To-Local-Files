@@ -2,6 +2,7 @@ using System.Collections.Concurrent;
 using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using GranolaPI.Application.Fireflies;
 using GranolaPI.Application.Granola;
 using GranolaPI.Application.Interfaces;
 using GranolaPI.Application.Synchronization;
@@ -102,10 +103,84 @@ public sealed class FakeGranolaApi : IGranolaApiClient
     public Task<IReadOnlyList<GranolaFolder>> ListFoldersAsync(CancellationToken ct) => Task.FromResult<IReadOnlyList<GranolaFolder>>([]);
 }
 
+/// <summary>Deterministic in-memory stand-in for the Fireflies API (only used in tests).</summary>
+public sealed class FakeFirefliesApi : IFirefliesApiClient
+{
+    public ConcurrentDictionary<string, FirefliesTranscript> Calls { get; } = new();
+    public ErrorCategory? FailEverythingWith { get; set; }
+    public int GetTranscriptCalls;
+
+    // Recent, so incremental runs (which look back a few days) still list these calls.
+    public static readonly DateTimeOffset T0 = new DateTimeOffset(DateTime.UtcNow.Date, TimeSpan.Zero).AddDays(-1).AddHours(14);
+
+    public FirefliesTranscript Add(string id, string title, string attendeeEmail = "client@acme.com", bool withSummary = true, int hoursOffset = 0)
+    {
+        var call = new FirefliesTranscript
+        {
+            Id = id,
+            Title = title,
+            Date = T0.AddHours(hoursOffset).ToUnixTimeMilliseconds(),
+            Duration = 30,
+            TranscriptUrl = "https://app.fireflies.ai/view/" + id,
+            OrganizerEmail = "owner@me.com",
+            User = new FirefliesUser { Name = "Owner Person", Email = "owner@me.com" },
+            Participants = ["owner@me.com," + attendeeEmail],
+            MeetingAttendees = [new FirefliesAttendee { DisplayName = "Carol Client", Email = attendeeEmail }],
+            Sentences =
+            [
+                new() { Index = 0, Text = "Welcome everyone.", StartTime = 0, EndTime = 2, SpeakerName = "Owner Person" },
+                new() { Index = 1, Text = "Thanks, let's review the requirements.", StartTime = 3, EndTime = 6, SpeakerName = "Carol Client" },
+                new() { Index = 2, Text = "Sounds good.", StartTime = 7, EndTime = 8, SpeakerName = "Speaker 3" },
+            ],
+            Summary = withSummary ? Summary(title) : null,
+        };
+        Calls[id] = call;
+        return call;
+    }
+
+    public static FirefliesSummary Summary(string title) => new()
+    {
+        Overview = $"Overview of {title}.",
+        ShorthandBullet = "- Requirements reviewed",
+        ActionItems = "**Carol Client**\nSend the spec (00:05)",
+        Keywords = ["requirements", "spec"],
+    };
+
+    private void ThrowIfFailing()
+    {
+        if (FailEverythingWith is { } c) throw new FirefliesApiException(c, c == ErrorCategory.Authentication ? 401 : 500, $"fake fireflies {c}");
+    }
+
+    public Task<GranolaConnectionResult> TestConnectionAsync(CancellationToken ct) =>
+        Task.FromResult(FailEverythingWith is { } c
+            ? new GranolaConnectionResult(false, c, "fake failure", "test")
+            : new GranolaConnectionResult(true, ErrorCategory.None, "ok", "test"));
+
+    public Task<IReadOnlyList<FirefliesTranscriptSummary>> ListTranscriptsAsync(DateTimeOffset? fromDate, int skip, int limit, CancellationToken ct)
+    {
+        ThrowIfFailing();
+        IReadOnlyList<FirefliesTranscriptSummary> page = Calls.Values
+            .Where(c => fromDate is null || c.Date >= fromDate.Value.ToUnixTimeMilliseconds())
+            .OrderByDescending(c => c.Date)
+            .Skip(skip).Take(limit)
+            .Select(c => new FirefliesTranscriptSummary { Id = c.Id, Title = c.Title, Date = c.Date })
+            .ToList();
+        return Task.FromResult(page);
+    }
+
+    public Task<FirefliesTranscript?> GetTranscriptAsync(string transcriptId, CancellationToken ct)
+    {
+        Interlocked.Increment(ref GetTranscriptCalls);
+        ThrowIfFailing();
+        return Task.FromResult(Calls.TryGetValue(transcriptId, out var c) ? c : null);
+    }
+}
+
 public sealed class AppFactory : WebApplicationFactory<Program>
 {
     public string BaseDir { get; } = Path.Combine(Path.GetTempPath(), "gpi-it", Guid.NewGuid().ToString("N"));
     public FakeGranolaApi Granola { get; } = new();
+    public FakeFirefliesApi Fireflies { get; } = new();
     public InMemoryCredentialStore Credentials { get; } = new();
     public string ExportRoot => Path.Combine(BaseDir, "GranolaProjectKnowledge");
 
@@ -128,6 +203,8 @@ public sealed class AppFactory : WebApplicationFactory<Program>
         {
             services.RemoveAll<IGranolaApiClient>();
             services.AddSingleton<IGranolaApiClient>(Granola);
+            services.RemoveAll<IFirefliesApiClient>();
+            services.AddSingleton<IFirefliesApiClient>(Fireflies);
             services.RemoveAll<ICredentialStore>();
             services.AddSingleton<ICredentialStore>(Credentials);
         });

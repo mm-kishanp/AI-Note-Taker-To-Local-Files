@@ -1,4 +1,4 @@
-import type { ExportRootKind, MeetingQuery } from '../types/api';
+import type { ExportRootKind, MeetingQuery, MeetingSource } from '../types/api';
 
 /** Central query keys so invalidation stays consistent across hooks. */
 export const qk = {
@@ -22,7 +22,7 @@ export const qk = {
   syncHistoryPage: (page: number, pageSize: number) => ['sync', 'history', page, pageSize] as const,
   syncRun: (id: string) => ['sync', 'run', id] as const,
   settings: ['settings'] as const,
-  granolaCredential: ['credentials', 'granola'] as const,
+  credential: (source: MeetingSource) => ['credentials', source] as const,
   aiCredential: ['credentials', 'ai'] as const,
   granolaFolders: ['granola', 'folders'] as const,
   exports: ['exports'] as const,

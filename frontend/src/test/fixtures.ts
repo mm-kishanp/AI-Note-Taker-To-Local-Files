@@ -19,6 +19,7 @@ export const meeting = (over: Partial<MeetingListItemDto> = {}): MeetingListItem
   sourceStatus: 'Active',
   lastSyncedAt: '2026-10-26T11:00:00Z',
   lastError: null,
+  source: 'Granola',
   ...over,
 });
 

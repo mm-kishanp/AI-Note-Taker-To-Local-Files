@@ -53,7 +53,7 @@ The database and the file system cannot share a transaction, so the export is de
 
 - Files are written to `.<name>.<guid>.gpi-tmp` in the destination folder, flushed, and renamed over the target. Stray temp files are removed at the start of each run.
 - An `ExportRecord` is marked `Exported` only after its file is on disk. Notes and transcripts have separate records, so a failed transcript can be retried without rewriting the notes.
-- Every generated file carries `granola_note_id` and `content_hash` in its front matter. User edits, and files the app did not generate, can therefore be detected even when the database is lost.
+- Every generated file carries its source ID (`granola_note_id` or `fireflies_transcript_id`) and `content_hash` in its front matter. User edits, and files the app did not generate, can therefore be detected even when the database is lost.
 
 ## Data ownership
 

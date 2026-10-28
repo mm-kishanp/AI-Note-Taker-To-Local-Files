@@ -251,7 +251,7 @@ public sealed class MeetingExporter(IAppDbContext db, IClock clock, ILogger<Meet
         // A file we generated for this very meeting earlier (e.g. state was lost) can be reused.
         var content = await AtomicFile.TryReadAsync(abs, ct);
         var fm = content is null ? null : MarkdownRenderer.ReadFrontMatter(content);
-        return fm is null || !fm.TryGetValue("granola_note_id", out var id) || id != meeting.GranolaNoteId
+        return fm is null || !fm.TryGetValue(MarkdownRenderer.IdKey(meeting.Source), out var id) || id != meeting.GranolaNoteId
             || !fm.TryGetValue("content_type", out var type) || type != (kind == ExportKind.Notes ? "notes" : "transcript");
     }
 
@@ -277,7 +277,7 @@ public sealed class MeetingExporter(IAppDbContext db, IClock clock, ILogger<Meet
             }
 
             var fm = MarkdownRenderer.ReadFrontMatter(existing);
-            var ours = fm is not null && fm.TryGetValue("granola_note_id", out var id) && id == meeting.GranolaNoteId;
+            var ours = fm is not null && fm.TryGetValue(MarkdownRenderer.IdKey(meeting.Source), out var id) && id == meeting.GranolaNoteId;
             if (!ours && mode != ExportMode.Force)
             {
                 Conflict(record, "Another file now occupies this export path; it was not overwritten.", outcome);

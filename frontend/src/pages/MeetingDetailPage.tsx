@@ -35,11 +35,11 @@ function Field({ label, children }: { label: string; children: ReactNode }) {
   );
 }
 
-function Transcript({ id, total }: { id: string; total: number }) {
+function Transcript({ id, total, source }: { id: string; total: number; source: string }) {
   const [page, setPage] = useState(1);
   const pageSize = 100;
   const q = useTranscript(id, page, pageSize, total > 0);
-  if (total === 0) return <EmptyState title="No transcript" description="Granola has no transcript for this meeting (yet)." />;
+  if (total === 0) return <EmptyState title="No transcript" description={`${source} has no transcript for this meeting (yet).`} />;
   if (q.isLoading) return <LoadingRows rows={8} />;
   if (q.error) return <ProblemAlert error={q.error} onRetry={() => void q.refetch()} />;
   const pages = Math.max(1, Math.ceil((q.data?.total ?? 0) / pageSize));
@@ -264,7 +264,7 @@ export function MeetingDetailPage() {
                     })
                   }
                 >
-                  Retry from Granola
+                  Retry from {m.source}
                 </Menu.Item>
                 <Menu.Item leftSection={<IconFileExport size={16} />} onClick={() => setReExportOpen(true)}>
                   Re-export files…
@@ -304,7 +304,7 @@ export function MeetingDetailPage() {
               ) : null}
             </Field>
             <Field label="Calendar event">{d.calendarEventTitle ? <Text size="sm">{d.calendarEventTitle}</Text> : null}</Field>
-            <Field label="Granola folders">
+            {m.source === 'Granola' && <Field label="Granola folders">
               {d.granolaFolders.length ? (
                 <Group gap={4}>
                   {d.granolaFolders.map((f) => (
@@ -314,12 +314,12 @@ export function MeetingDetailPage() {
                   ))}
                 </Group>
               ) : null}
-            </Field>
+            </Field>}
             <Field label="Source">
               {d.sourceUrl ? (
                 <Anchor href={d.sourceUrl} target="_blank" rel="noopener noreferrer" size="sm">
                   <Group gap={4} component="span">
-                    Open in Granola <IconExternalLink size={14} aria-hidden />
+                    Open in {m.source} <IconExternalLink size={14} aria-hidden />
                   </Group>
                 </Anchor>
               ) : null}
@@ -338,7 +338,7 @@ export function MeetingDetailPage() {
                 {m.sourceStatus}
               </Text>
             </Field>
-            <Field label="Created / updated in Granola">
+            <Field label={`Created / updated in ${m.source}`}>
               <Text size="sm">
                 {formatDateTime(d.createdAt)} / {formatDateTime(d.updatedAt)}
               </Text>
@@ -417,8 +417,8 @@ export function MeetingDetailPage() {
         <Tabs defaultValue="files" keepMounted={false}>
           <Tabs.List>
             <Tabs.Tab value="files">Exported files ({currentExports.length})</Tabs.Tab>
-            <Tabs.Tab value="summary">Granola summary</Tabs.Tab>
-            <Tabs.Tab value="notes">Owner notes</Tabs.Tab>
+            <Tabs.Tab value="summary">{m.source === 'Fireflies' ? 'Fireflies AI notes' : 'Granola summary'}</Tabs.Tab>
+            {m.source === 'Granola' && <Tabs.Tab value="notes">Owner notes</Tabs.Tab>}
             <Tabs.Tab value="transcript">Transcript ({d.transcriptSegmentCount})</Tabs.Tab>
             <Tabs.Tab value="history">Sync history ({d.history.length})</Tabs.Tab>
           </Tabs.List>
@@ -515,13 +515,13 @@ export function MeetingDetailPage() {
           </Tabs.Panel>
 
           <Tabs.Panel value="summary" pt="md">
-            {d.summary ? <Markdown content={d.summary} /> : <EmptyState title="No summary" description="Granola has not produced a summary for this meeting." />}
+            {d.summary ? <Markdown content={d.summary} /> : <EmptyState title="No summary" description={`${m.source} has not produced a summary for this meeting yet.`} />}
           </Tabs.Panel>
           <Tabs.Panel value="notes" pt="md">
             {d.notesContent ? <Markdown content={d.notesContent} /> : <EmptyState title="No owner notes" description="You did not write notes in Granola for this meeting." />}
           </Tabs.Panel>
           <Tabs.Panel value="transcript" pt="md">
-            <Transcript id={id} total={d.transcriptSegmentCount} />
+            <Transcript id={id} total={d.transcriptSegmentCount} source={m.source} />
           </Tabs.Panel>
           <Tabs.Panel value="history" pt="md">
             {d.history.length === 0 ? (

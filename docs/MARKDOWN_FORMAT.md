@@ -114,7 +114,7 @@ Original transcript text.
 | Hash matches (not edited) | No write | Rewritten in place |
 | Edited by you | Status `LocallyModified`, no write | Status **`Conflict`**, no write |
 | Missing (you moved or deleted it) | Status `Missing`, not recreated | Recreated |
-| Another file (different `granola_note_id`) | Never overwritten | Never overwritten |
+| Another file (different `granola_note_id` / `fireflies_transcript_id`) | Never overwritten | Never overwritten |
 
 You can resolve a conflict from the meeting page:
 

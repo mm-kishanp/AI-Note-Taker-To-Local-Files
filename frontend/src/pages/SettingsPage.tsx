@@ -12,14 +12,14 @@ import { PathText } from '../components/PathText';
 import { ProblemAlert } from '../components/ProblemAlert';
 import { LoadingRows, QueryState } from '../components/QueryState';
 import {
-  useAiCredential, useDeleteAiCredential, useDeleteGranolaCredential, useGranolaCredential, useMigrateRoot,
-  useSetAiCredential, useSetGranolaCredential, useSettings, useTestConnection, useUpdateSettings,
+  useAiCredential, useDeleteAiCredential, useDeleteSourceCredential, useMigrateRoot, useSetAiCredential,
+  useSetSourceCredential, useSettings, useSourceCredential, useTestConnection, useUpdateSettings,
 } from '../hooks/useSettings';
 import { ApiError } from '../services/api';
 import {
   CLASSIFICATION_TIERS, CONFLICT_POLICIES, MULTI_PROJECT_MODES,
   type ClassificationSettings, type ClassificationTier, type ConnectionTestDto, type ExportSettings, type LoggingSettings,
-  type MigrateRootResultDto, type SettingsDto, type SyncSettings, type UpdateSettingsRequest,
+  type MeetingSource, type MigrateRootResultDto, type SettingsDto, type SyncSettings, type UpdateSettingsRequest,
 } from '../types/api';
 import { formatDateTime, formatRelative, humanize } from '../utils/format';
 import { notifyError, notifySuccess } from '../utils/notify';
@@ -27,7 +27,7 @@ import { notifyError, notifySuccess } from '../utils/notify';
 const TIER_HELP: Record<ClassificationTier, string> = {
   ParticipantEmail: 'Exact participant / invitee email (Email rules)',
   ParticipantIdentity: 'Attendee name or email domain (ParticipantName, EmailDomain rules)',
-  SpeakerIdentity: 'Speakers Granola identified by name in the transcript',
+  SpeakerIdentity: 'Speakers Granola or Fireflies identified by name in the transcript',
   Client: 'Client rules → that client’s projects',
   Metadata: 'Granola folder membership (GranolaFolder rules)',
   Keyword: 'Title / summary keywords',
@@ -95,13 +95,34 @@ function useSaveSection() {
   return { save, saving: update.isPending, error: update.error, reset: update.reset };
 }
 
-// ---------------------------------------------------------------- Granola connection
+// ---------------------------------------------------------------- Source connections
 
-function GranolaConnection() {
-  const status = useGranolaCredential();
-  const setKey = useSetGranolaCredential();
-  const del = useDeleteGranolaCredential();
-  const test = useTestConnection();
+const SOURCE_INFO: Record<MeetingSource, { title: string; where: ReactNode; placeholder: string; envVar: string }> = {
+  Granola: {
+    title: 'Granola connection',
+    where: <>Create a key in the Granola desktop app under <b>Settings → Connectors → API keys</b>.</>,
+    placeholder: 'grn_…',
+    envVar: 'GRANOLA_API_KEY',
+  },
+  Fireflies: {
+    title: 'Fireflies connection',
+    where: (
+      <>
+        Optional. Every call Fireflies.ai recorded is imported with its AI notes and transcript. Copy the key from{' '}
+        <Anchor href="https://app.fireflies.ai/integrations" target="_blank" rel="noopener noreferrer">app.fireflies.ai → Integrations → Fireflies API</Anchor>.
+      </>
+    ),
+    placeholder: 'Fireflies API key',
+    envVar: 'FIREFLIES_API_KEY',
+  },
+};
+
+function SourceConnection({ source }: { source: MeetingSource }) {
+  const info = SOURCE_INFO[source];
+  const status = useSourceCredential(source);
+  const setKey = useSetSourceCredential(source);
+  const del = useDeleteSourceCredential(source);
+  const test = useTestConnection(source);
   const [key, setKeyValue] = useState('');
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [lastTest, setLastTest] = useState<ConnectionTestDto | null>(null);
@@ -109,11 +130,11 @@ function GranolaConnection() {
 
   return (
     <Section
-      title="Granola connection"
+      title={info.title}
       description={
         <>
-          Create a key in the Granola desktop app under <b>Settings → Connectors → API keys</b>. The key is validated, then stored in the
-          operating system's credential store; it is never shown again in full and never sent to this browser.
+          {info.where} The key is validated, then stored in the operating system's credential store; it is never shown again in full and
+          never sent to this browser.
         </>
       }
     >
@@ -162,7 +183,7 @@ function GranolaConnection() {
                     {
                       onSuccess: () => {
                         setKeyValue('');
-                        notifySuccess('API key saved and verified with Granola.');
+                        notifySuccess(`API key saved and verified with ${source}.`);
                       },
                     },
                   );
@@ -171,7 +192,7 @@ function GranolaConnection() {
                 <Group align="flex-end" wrap="wrap">
                   <PasswordInput
                     label={s.configured ? 'Replace API key' : 'API key'}
-                    placeholder="grn_…"
+                    placeholder={info.placeholder}
                     value={key}
                     onChange={(e) => setKeyValue(e.currentTarget.value)}
                     autoComplete="off"
@@ -185,7 +206,7 @@ function GranolaConnection() {
               </form>
             ) : (
               <Alert color="blue">
-                {s.storeName} is read-only on this host. Provide the key with the <Code>GRANOLA_API_KEY</Code> environment variable.
+                {s.storeName} is read-only on this host. Provide the key with the <Code>{info.envVar}</Code> environment variable.
               </Alert>
             )}
             {setKey.error && !fieldError(setKey.error, 'apiKey') ? <ProblemAlert error={setKey.error} /> : null}
@@ -219,11 +240,11 @@ function GranolaConnection() {
           </Stack>
         )}
       </QueryState>
-      <Modal opened={confirmDelete} onClose={() => setConfirmDelete(false)} title="Remove the Granola API key?">
+      <Modal opened={confirmDelete} onClose={() => setConfirmDelete(false)} title={`Remove the ${source} API key?`}>
         <Stack>
           <Text size="sm">
-            Synchronization stops until a new key is added. Exported files and meeting history are not affected. To revoke the key itself,
-            also delete it in Granola.
+            {source} meetings stop synchronizing until a new key is added. Exported files and meeting history are not affected. To revoke the key itself,
+            also delete it in {source}.
           </Text>
           <Group justify="flex-end">
             <Button variant="default" onClick={() => setConfirmDelete(false)}>Cancel</Button>
@@ -279,6 +300,7 @@ function SyncSection({ settings }: { settings: SettingsDto }) {
         <NumberInput label="Attempts per request" description="Retries for transient Granola errors (1–10)." min={1} max={10} value={v.maxRequestAttempts} onChange={num('maxRequestAttempts')} error={fieldError(error, 'sync.maxRequestAttempts')} />
         <NumberInput label="Retries per failed meeting" description="Scheduled retries before only manual retry applies." min={0} max={50} value={v.maxMeetingRetries} onChange={num('maxMeetingRetries')} error={fieldError(error, 'sync.maxMeetingRetries')} />
         <NumberInput label="Incremental overlap (minutes)" description="Tolerates clock skew between this computer and Granola." min={0} max={1440} value={v.incrementalOverlapMinutes} onChange={num('incrementalOverlapMinutes')} error={fieldError(error, 'sync.incrementalOverlapMinutes')} />
+        <NumberInput label="Fireflies look-back (days)" description="Fireflies finishes transcripts and AI notes after the call; recent calls are re-checked until both arrive." min={1} max={60} value={v.firefliesLookbackDays} onChange={num('firefliesLookbackDays')} error={fieldError(error, 'sync.firefliesLookbackDays')} />
       </SimpleGrid>
       <SaveBar dirty={form.dirty} saving={saving} onReset={form.reset} error={error} onSave={() => save({ sync: v }, 'Synchronization')} />
     </Section>
@@ -593,17 +615,20 @@ export function SettingsPage() {
   const settings = useSettings();
   return (
     <>
-      <PageHeader title="Settings" description={<>Configuration is stored in the local database. See <Anchor href="https://docs.granola.ai/introduction" target="_blank" rel="noopener noreferrer">Granola API docs</Anchor> for key scopes.</>} docTitle="Settings" />
+      <PageHeader title="Settings" description={<>Configuration is stored in the local database. API docs: <Anchor href="https://docs.granola.ai/introduction" target="_blank" rel="noopener noreferrer">Granola</Anchor>, <Anchor href="https://docs.fireflies.ai/getting-started/quickstart" target="_blank" rel="noopener noreferrer">Fireflies</Anchor>.</>} docTitle="Settings" />
       <Tabs defaultValue="connection" keepMounted={false}>
         <Tabs.List mb="md">
-          <Tabs.Tab value="connection">Granola connection</Tabs.Tab>
+          <Tabs.Tab value="connection">Connections</Tabs.Tab>
           <Tabs.Tab value="sync">Synchronization</Tabs.Tab>
           <Tabs.Tab value="export">Export</Tabs.Tab>
           <Tabs.Tab value="classification">Classification</Tabs.Tab>
           <Tabs.Tab value="logging">Logging</Tabs.Tab>
         </Tabs.List>
         <Tabs.Panel value="connection">
-          <GranolaConnection />
+          <Stack gap="lg">
+            <SourceConnection source="Granola" />
+            <SourceConnection source="Fireflies" />
+          </Stack>
         </Tabs.Panel>
         {(['sync', 'export', 'classification', 'logging'] as const).map((tab) => (
           <Tabs.Panel key={tab} value={tab}>

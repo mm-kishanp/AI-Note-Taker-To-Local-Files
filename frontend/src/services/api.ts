@@ -2,7 +2,7 @@ import type {
   AiStatusDto, ApplyRulesRequest, AssignMeetingRequest, ClientDto, ClientInput, ConflictResolution, ConflictReviewDto,
   ConnectionTestDto, CredentialStatusDto, DashboardDto, DestinationPreviewDto, DirectoryListingDto, ExportRootKind,
   ExportTreeDto, FileContentDto, GranolaFolder, HealthDto, ImportResultDto, ManualAssignmentKind, MeetingDetailDto,
-  MeetingListItemDto, MeetingQuery, MigrateRootRequest, MigrateRootResultDto, PagedResponse, ProblemDetails,
+  MeetingListItemDto, MeetingQuery, MeetingSource, MigrateRootRequest, MigrateRootResultDto, PagedResponse, ProblemDetails,
   ProjectConfigExport, ProjectDto, ProjectInput, ReExportRequest, RuleDto, RuleInput, SaveMappingFromReviewRequest,
   SetCredentialRequest, SettingsDto, StartSyncRequest, SyncProgressSnapshot, SyncRunDetailDto, SyncRunDto,
   SyncStartResult, TestMappingRequest, TestMappingResultDto, TranscriptSegmentDto, UnassignedItemDto,
@@ -170,6 +170,8 @@ export async function request<T>(method: string, path: string, opts: RequestOpti
       body: !isSafe && opts.body !== undefined ? JSON.stringify(opts.body) : undefined,
       signal: opts.signal,
       credentials: 'same-origin',
+      // Bypass the HTTP cache so a stale browser entry can never stand in for live API data.
+      cache: 'no-store',
     });
   } catch (e) {
     if (e instanceof DOMException && e.name === 'AbortError') throw e;
@@ -197,11 +199,19 @@ export async function request<T>(method: string, path: string, opts: RequestOpti
   try {
     return JSON.parse(text) as T;
   } catch {
-    return text as unknown as T;
+    // Every API endpoint returns JSON. Anything else (typically the app's HTML page) means the
+    // backend does not know this endpoint, usually because it is an older version than the UI.
+    throw new ApiError({
+      status: res.status,
+      title: 'Unexpected response from the backend',
+      detail: 'The backend did not return data for this request. If you just updated the app, restart it with stop.bat and run.bat.',
+      category: 'InvalidResponse',
+    });
   }
 }
 
 const enc = encodeURIComponent;
+const sourcePath = (source: MeetingSource) => (source === 'Fireflies' ? 'fireflies' : 'granola');
 
 /** Starts a background run; a 409 (already running) is surfaced as an ApiError whose detail is the server message. */
 async function startRun(path: string, body?: unknown): Promise<SyncStartResult> {
@@ -276,17 +286,20 @@ export const api = {
   settings: {
     get: () => request<SettingsDto>('GET', '/settings'),
     update: (body: UpdateSettingsRequest) => request<SettingsDto>('PUT', '/settings', { body }),
-    granolaCredential: () => request<CredentialStatusDto>('GET', '/settings/credentials/granola'),
-    setGranolaCredential: (body: SetCredentialRequest) =>
-      request<CredentialStatusDto>('PUT', '/settings/credentials/granola', { body }),
-    deleteGranolaCredential: () => request<CredentialStatusDto>('DELETE', '/settings/credentials/granola'),
+    credential: (source: MeetingSource) => request<CredentialStatusDto>('GET', `/settings/credentials/${sourcePath(source)}`),
+    setCredential: (source: MeetingSource, body: SetCredentialRequest) =>
+      request<CredentialStatusDto>('PUT', `/settings/credentials/${sourcePath(source)}`, { body }),
+    deleteCredential: (source: MeetingSource) => request<CredentialStatusDto>('DELETE', `/settings/credentials/${sourcePath(source)}`),
     aiCredential: () => request<AiStatusDto>('GET', '/settings/credentials/ai'),
     setAiCredential: (body: SetCredentialRequest) => request<AiStatusDto>('PUT', '/settings/credentials/ai', { body }),
     deleteAiCredential: () => request<AiStatusDto>('DELETE', '/settings/credentials/ai'),
   },
 
+  sources: {
+    testConnection: (source: MeetingSource) => request<ConnectionTestDto>('POST', `/${sourcePath(source)}/test-connection`),
+  },
+
   granola: {
-    testConnection: () => request<ConnectionTestDto>('POST', '/granola/test-connection'),
     folders: () => request<GranolaFolder[]>('GET', '/granola/folders'),
   },
 

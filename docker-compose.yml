@@ -9,6 +9,7 @@ services:
       - "127.0.0.1:8080:8080"   # bind to localhost; put a TLS reverse proxy in front for remote access
     environment:
       GRANOLA_API_KEY: ${GRANOLA_API_KEY:?set GRANOLA_API_KEY in .env}
+      FIREFLIES_API_KEY: ${FIREFLIES_API_KEY:-}
       Security__ApiToken: ${GPI_API_TOKEN:?set GPI_API_TOKEN in .env}
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
       AllowedHosts: "*"

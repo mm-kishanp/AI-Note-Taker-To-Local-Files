@@ -11,7 +11,7 @@ import { useMeetings } from '../hooks/useMeetings';
 import { useClients, useProjects } from '../hooks/useProjects';
 import {
   CLASSIFICATION_STATUSES, type ClassificationStatus, CONTENT_STATUSES, type ContentStatus, EXPORT_STATUSES, type ExportStatus,
-  type MeetingQuery,
+  MEETING_SOURCES, type MeetingQuery, type MeetingSource,
 } from '../types/api';
 import { dateParamToIso } from '../utils/format';
 import { statusLabel } from '../utils/status';
@@ -20,7 +20,7 @@ const SORTS = ['date', 'title', 'project', 'synced', 'status'] as const;
 type Sort = (typeof SORTS)[number];
 const PAGE_SIZES = ['10', '25', '50', '100'];
 
-const FILTER_KEYS = ['search', 'from', 'to', 'projectId', 'clientId', 'classification', 'exportStatus', 'transcriptStatus', 'needsReview'];
+const FILTER_KEYS = ['search', 'from', 'to', 'projectId', 'clientId', 'classification', 'exportStatus', 'transcriptStatus', 'needsReview', 'source'];
 
 function opt<T extends string>(values: readonly T[], anyLabel: string) {
   return [{ value: '', label: anyLabel }, ...values.map((v) => ({ value: v, label: statusLabel(v) }))];
@@ -69,6 +69,7 @@ export function MeetingsPage() {
       exportStatus: (get('exportStatus') || undefined) as ExportStatus | undefined,
       transcriptStatus: (get('transcriptStatus') || undefined) as ContentStatus | undefined,
       needsReview: get('needsReview') === 'true' ? true : get('needsReview') === 'false' ? false : undefined,
+      source: (get('source') || undefined) as MeetingSource | undefined,
       sort,
       desc,
       page,
@@ -89,7 +90,7 @@ export function MeetingsPage() {
 
   return (
     <>
-      <PageHeader title="Meetings" description="All meetings synchronized from Granola. Click a row for details, classification and files." />
+      <PageHeader title="Meetings" description="All meetings synchronized from Granola and Fireflies. Click a row for details, classification and files." />
       <Paper withBorder p="sm" radius="md" mb="md" component="section" aria-label="Filters">
         <Stack gap="xs">
           <SimpleGrid cols={{ base: 1, sm: 2, md: 4 }} spacing="xs">
@@ -141,6 +142,12 @@ export function MeetingsPage() {
                 { value: 'true', label: 'Needs review' },
                 { value: 'false', label: 'Reviewed / no review needed' },
               ]}
+            />
+            <NativeSelect
+              label="Source"
+              value={get('source')}
+              onChange={(e) => setParam({ source: e.currentTarget.value })}
+              data={[{ value: '', label: 'Any source' }, ...MEETING_SOURCES.map((v) => ({ value: v, label: v }))]}
             />
           </SimpleGrid>
           <Group justify="space-between">

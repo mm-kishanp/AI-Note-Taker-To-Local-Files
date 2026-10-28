@@ -6,7 +6,7 @@
   },
   "servers": [
     {
-      "url": "http://127.0.0.1:5080/"
+      "url": "http://127.0.0.1:5091/"
     }
   ],
   "paths": {
@@ -81,6 +81,13 @@
             "in": "query",
             "schema": {
               "type": "boolean"
+            }
+          },
+          {
+            "name": "Source",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/MeetingSource"
             }
           },
           {
@@ -1990,6 +1997,109 @@
         }
       }
     },
+    "/api/settings/credentials/fireflies": {
+      "get": {
+        "tags": [
+          "Settings"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/CredentialStatusDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CredentialStatusDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CredentialStatusDto"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Settings"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetCredentialRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetCredentialRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetCredentialRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/CredentialStatusDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CredentialStatusDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CredentialStatusDto"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Settings"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/CredentialStatusDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CredentialStatusDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CredentialStatusDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/settings/credentials/ai": {
       "get": {
         "tags": [
@@ -2153,6 +2263,35 @@
                   "items": {
                     "$ref": "#/components/schemas/GranolaFolder"
                   }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/fireflies/test-connection": {
+      "post": {
+        "tags": [
+          "Fireflies"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConnectionTestDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConnectionTestDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConnectionTestDto"
                 }
               }
             }
@@ -3772,8 +3911,18 @@
               "null",
               "string"
             ]
+          },
+          "source": {
+            "$ref": "#/components/schemas/MeetingSource"
           }
         }
+      },
+      "MeetingSource": {
+        "enum": [
+          "Granola",
+          "Fireflies"
+        ],
+        "default": "Granola"
       },
       "MigrateRootRequest": {
         "required": [
@@ -4854,6 +5003,8 @@
         "required": [
           "id",
           "syncRunId",
+          "meetingId",
+          "granolaNoteId",
           "operation",
           "outcome",
           "errorCategory",
@@ -4870,6 +5021,19 @@
           "syncRunId": {
             "type": "string",
             "format": "uuid"
+          },
+          "meetingId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          },
+          "granolaNoteId": {
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "operation": {
             "type": "string"
@@ -4951,6 +5115,14 @@
             "format": "int32"
           },
           "incrementalOverlapMinutes": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "firefliesLookbackDays": {
             "pattern": "^-?(?:0|[1-9]\\d*)$",
             "type": [
               "integer",
@@ -5329,6 +5501,9 @@
     },
     {
       "name": "Granola"
+    },
+    {
+      "name": "Fireflies"
     },
     {
       "name": "Exports"

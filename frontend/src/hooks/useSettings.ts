@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '../services/api';
-import type { MigrateRootRequest, SetCredentialRequest, UpdateSettingsRequest } from '../types/api';
+import type { MeetingSource, MigrateRootRequest, SetCredentialRequest, UpdateSettingsRequest } from '../types/api';
 import { qk } from './queryKeys';
 
 export function useSettings() {
@@ -20,39 +20,39 @@ export function useUpdateSettings() {
   });
 }
 
-export function useGranolaCredential() {
-  return useQuery({ queryKey: qk.granolaCredential, queryFn: api.settings.granolaCredential });
+export function useSourceCredential(source: MeetingSource) {
+  return useQuery({ queryKey: qk.credential(source), queryFn: () => api.settings.credential(source) });
 }
 
-export function useSetGranolaCredential() {
+export function useSetSourceCredential(source: MeetingSource) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (req: SetCredentialRequest) => api.settings.setGranolaCredential(req),
+    mutationFn: (req: SetCredentialRequest) => api.settings.setCredential(source, req),
     onSuccess: (s) => {
-      qc.setQueryData(qk.granolaCredential, s);
+      qc.setQueryData(qk.credential(source), s);
       void qc.invalidateQueries({ queryKey: qk.health });
       void qc.invalidateQueries({ queryKey: qk.dashboard });
     },
   });
 }
 
-export function useDeleteGranolaCredential() {
+export function useDeleteSourceCredential(source: MeetingSource) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: () => api.settings.deleteGranolaCredential(),
+    mutationFn: () => api.settings.deleteCredential(source),
     onSuccess: (s) => {
-      qc.setQueryData(qk.granolaCredential, s);
+      qc.setQueryData(qk.credential(source), s);
       void qc.invalidateQueries({ queryKey: qk.health });
       void qc.invalidateQueries({ queryKey: qk.dashboard });
     },
   });
 }
 
-export function useTestConnection() {
+export function useTestConnection(source: MeetingSource) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: () => api.granola.testConnection(),
-    onSettled: () => void qc.invalidateQueries({ queryKey: qk.granolaCredential }),
+    mutationFn: () => api.sources.testConnection(source),
+    onSettled: () => void qc.invalidateQueries({ queryKey: qk.credential(source) }),
   });
 }
 

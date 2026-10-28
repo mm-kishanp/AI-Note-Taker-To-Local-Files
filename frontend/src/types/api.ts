@@ -91,6 +91,9 @@ export interface ProblemDetails {
 }
 
 // ---------- Meetings ----------
+export const MEETING_SOURCES = ['Granola', 'Fireflies'] as const;
+export type MeetingSource = (typeof MEETING_SOURCES)[number];
+
 export interface MeetingListItemDto {
   id: string;
   granolaNoteId: string;
@@ -110,6 +113,7 @@ export interface MeetingListItemDto {
   sourceStatus: SourceStatus;
   lastSyncedAt: string | null;
   lastError: string | null;
+  source: MeetingSource;
 }
 
 export interface MeetingQuery {
@@ -122,6 +126,7 @@ export interface MeetingQuery {
   exportStatus?: ExportStatus;
   transcriptStatus?: ContentStatus;
   needsReview?: boolean;
+  source?: MeetingSource;
   sort?: 'date' | 'title' | 'project' | 'synced' | 'status';
   desc?: boolean;
   page?: number;
@@ -510,6 +515,7 @@ export interface SyncSettings {
   maxRequestAttempts: number;
   maxMeetingRetries: number;
   incrementalOverlapMinutes: number;
+  firefliesLookbackDays: number;
 }
 
 export interface AiSettings {

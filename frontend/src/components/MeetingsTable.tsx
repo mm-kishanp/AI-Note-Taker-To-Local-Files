@@ -1,4 +1,4 @@
-import { Anchor, Group, Table, Text, Tooltip, UnstyledButton } from '@mantine/core';
+import { Anchor, Badge, Group, Table, Text, Tooltip, UnstyledButton } from '@mantine/core';
 import { IconAlertCircle, IconArrowDown, IconArrowUp, IconSelector } from '@tabler/icons-react';
 import type { KeyboardEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
@@ -77,6 +77,11 @@ export function MeetingsTable({ items, sort, desc, onSort, compact }: MeetingsTa
                     <Anchor component={Link} to={`/meetings/${m.id}`} onClick={(e) => e.stopPropagation()} size="sm" fw={500} lineClamp={2} tabIndex={-1}>
                       {m.title || '(untitled)'}
                     </Anchor>
+                    {m.source === 'Fireflies' && (
+                      <Badge size="xs" variant="light" color="violet" style={{ flexShrink: 0 }}>
+                        Fireflies
+                      </Badge>
+                    )}
                     {m.lastError && (
                       <Tooltip label={m.lastError} multiline w={300}>
                         <IconAlertCircle size={16} color="var(--mantine-color-red-6)" aria-label={`Error: ${m.lastError}`} />

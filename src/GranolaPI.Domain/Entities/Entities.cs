@@ -59,6 +59,8 @@ public class ClassificationRule
 public class Meeting
 {
     public Guid Id { get; set; } = Guid.NewGuid();
+    public MeetingSource Source { get; set; } = MeetingSource.Granola;
+    /// <summary>The source's own ID: a Granola note ID or a Fireflies transcript ID.</summary>
     public string GranolaNoteId { get; set; } = "";
     public string Title { get; set; } = "";
     public DateTime CreatedAt { get; set; }

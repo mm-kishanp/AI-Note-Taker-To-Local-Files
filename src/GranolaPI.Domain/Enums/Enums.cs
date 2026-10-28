@@ -55,6 +55,13 @@ public enum ContentStatus
     Failed = 4,
 }
 
+/// <summary>The service a meeting was imported from.</summary>
+public enum MeetingSource
+{
+    Granola = 0,
+    Fireflies = 1,
+}
+
 public enum SourceStatus
 {
     Active = 0,

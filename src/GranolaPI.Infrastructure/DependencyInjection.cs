@@ -1,10 +1,12 @@
 using System.Diagnostics;
 using GranolaPI.Application.Classification;
 using GranolaPI.Application.Export;
+using GranolaPI.Application.Fireflies;
 using GranolaPI.Application.Granola;
 using GranolaPI.Application.Interfaces;
 using GranolaPI.Application.Synchronization;
 using GranolaPI.Infrastructure.Ai;
+using GranolaPI.Infrastructure.Fireflies;
 using GranolaPI.Infrastructure.Granola;
 using GranolaPI.Infrastructure.Logging;
 using GranolaPI.Infrastructure.Persistence;
@@ -33,6 +35,12 @@ public static class DependencyInjection
 
         services.AddSingleton<GranolaRequestThrottle>();
         services.AddHttpClient<IGranolaApiClient, GranolaApiClient>(c =>
+        {
+            c.Timeout = TimeSpan.FromSeconds(100);
+            c.DefaultRequestHeaders.UserAgent.ParseAdd("GranolaProjectIntelligenceSync/1.0");
+        });
+        services.AddSingleton<FirefliesRequestThrottle>();
+        services.AddHttpClient<IFirefliesApiClient, FirefliesApiClient>(c =>
         {
             c.Timeout = TimeSpan.FromSeconds(100);
             c.DefaultRequestHeaders.UserAgent.ParseAdd("GranolaProjectIntelligenceSync/1.0");

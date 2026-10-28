@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using GranolaPI.Application.Classification;
 using GranolaPI.Application.Export;
+using GranolaPI.Application.Fireflies;
 using GranolaPI.Application.Granola;
 using GranolaPI.Application.Interfaces;
 using GranolaPI.Application.Settings;
@@ -45,6 +46,8 @@ public sealed class SyncEngine(
         await db.SaveChangesAsync(ct);
 
         var listingComplete = false;
+        var listedSources = new HashSet<MeetingSource>();
+        var sourceErrors = new List<string>();
         try
         {
             var settings = await settingsService.GetAsync(ct);
@@ -65,17 +68,55 @@ public sealed class SyncEngine(
             {
                 case SyncMode.Incremental:
                 case SyncMode.Full:
-                    var checkpoint = await settingsService.GetSectionAsync<SyncCheckpoint>(SettingKeys.Checkpoint, ct);
-                    var query = BuildQuery(request.Mode, settings.Sync, checkpoint);
-                    run.UpdatedAfterFilter = query.UpdatedAfter?.ToString("O") ?? (query.CreatedAfter is { } ca ? $"created_after {ca:O}" : "all");
-                    items = await DiscoverAsync(api, db, query, request.Mode == SyncMode.Full, counters, run, ct);
+                    var secrets = scope.ServiceProvider.GetRequiredService<ISecretProvider>();
+                    var useFireflies = secrets.Get(SecretNames.FirefliesApiKey) is not null;
+                    // Granola stays the default source: with no key at all its "not configured" error is reported.
+                    var useGranola = secrets.Get(SecretNames.GranolaApiKey) is not null || !useFireflies;
+                    var filters = new List<string>();
+
+                    if (useGranola)
+                    {
+                        var checkpoint = await settingsService.GetSectionAsync<SyncCheckpoint>(SettingKeys.Checkpoint, ct);
+                        var query = BuildQuery(request.Mode, settings.Sync, checkpoint);
+                        filters.Add(query.UpdatedAfter?.ToString("O") ?? (query.CreatedAfter is { } ca ? $"created_after {ca:O}" : "all"));
+                        try
+                        {
+                            items.AddRange(await DiscoverAsync(api, db, query, request.Mode == SyncMode.Full, counters, run, ct));
+                            listedSources.Add(MeetingSource.Granola);
+                        }
+                        catch (GranolaApiException ex) when (useFireflies)
+                        {
+                            sourceErrors.Add($"Granola: {ex.Category}: {ex.Message}");
+                        }
+                    }
+                    if (useFireflies)
+                    {
+                        var ffCheckpoint = await settingsService.GetSectionAsync<SyncCheckpoint>(SettingKeys.FirefliesCheckpoint, ct);
+                        var from = request.Mode == SyncMode.Incremental && ffCheckpoint.LastSuccessfulIncrementalStart is { } last
+                            ? last.AddDays(-settings.Sync.FirefliesLookbackDays)
+                            : settings.Sync.InitialImportFrom;
+                        filters.Add(from is { } f ? $"fireflies from {f:O}" : "fireflies all");
+                        try
+                        {
+                            var fireflies = scope.ServiceProvider.GetRequiredService<IFirefliesApiClient>();
+                            items.AddRange(await DiscoverFirefliesAsync(fireflies, db, from, counters, ct));
+                            listedSources.Add(MeetingSource.Fireflies);
+                        }
+                        catch (GranolaApiException ex) when (useGranola)
+                        {
+                            sourceErrors.Add($"Fireflies: {ex.Category}: {ex.Message}");
+                        }
+                    }
+                    if (listedSources.Count == 0 && sourceErrors.Count > 0)
+                        throw new InvalidOperationException(string.Join(" ", sourceErrors));
+                    run.UpdatedAfterFilter = string.Join("; ", filters);
                     listingComplete = true;
                     await AddPendingRetries(db, items, settings.Sync, onlyDue: true, ct);
                     break;
                 case SyncMode.RetryFailed when request.MeetingIds is { Count: > 0 } ids:
-                    // Explicit retry of selected meetings: always re-fetch from Granola.
+                    // Explicit retry of selected meetings: always re-fetch from the source.
                     items = await db.Meetings.AsNoTracking().Where(m => ids.Contains(m.Id))
-                        .Select(m => new WorkItem(m.GranolaNoteId, true, m.Id)).ToListAsync(ct);
+                        .Select(m => new WorkItem(m.GranolaNoteId, true, m.Id, m.Source)).ToListAsync(ct);
                     break;
                 case SyncMode.RetryFailed:
                     await AddPendingRetries(db, items, settings.Sync, onlyDue: false, ct);
@@ -158,16 +199,19 @@ public sealed class SyncEngine(
             await contexts.UpdateProjectsAsync(touchedProjects, layout, ct);
             await contexts.UpdateReviewQueueAsync(layout, ct);
 
-            var anyFailure = results.Any(r => r.Result.Failed);
+            var anyFailure = results.Any(r => r.Result.Failed) || sourceErrors.Count > 0;
             run.Status = anyFailure ? SyncRunStatus.PartiallySucceeded : SyncRunStatus.Succeeded;
+            if (sourceErrors.Count > 0) run.Error = string.Join(" ", sourceErrors);
 
             if (listingComplete && request.Mode is SyncMode.Incremental or SyncMode.Full)
             {
-                await settingsService.SaveSectionAsync(SettingKeys.Checkpoint, new SyncCheckpoint
+                var checkpoint = new SyncCheckpoint
                 {
                     LastSuccessfulIncrementalStart = new DateTimeOffset(run.StartedAt, TimeSpan.Zero),
                     LastSuccessfulRunFinishedAt = clock.UtcNow,
-                }, ct);
+                };
+                if (listedSources.Contains(MeetingSource.Granola)) await settingsService.SaveSectionAsync(SettingKeys.Checkpoint, checkpoint, ct);
+                if (listedSources.Contains(MeetingSource.Fireflies)) await settingsService.SaveSectionAsync(SettingKeys.FirefliesCheckpoint, checkpoint, ct);
             }
         }
         catch (OperationCanceledException)
@@ -262,9 +306,48 @@ public sealed class SyncEngine(
         return items;
     }
 
+    /// <summary>
+    /// Lists Fireflies calls from <paramref name="from"/>. Fireflies reports no update time, so a known call is
+    /// fetched again only while its transcript or AI notes are still missing (Fireflies adds them after the call).
+    /// </summary>
+    private async Task<List<WorkItem>> DiscoverFirefliesAsync(IFirefliesApiClient api, IAppDbContext db, DateTimeOffset? from, SyncCounters counters, CancellationToken ct)
+    {
+        const int pageSize = 50;
+        var items = new List<WorkItem>();
+        var seen = new HashSet<string>();
+        for (var skip = 0; ; skip += pageSize)
+        {
+            var page = await api.ListTranscriptsAsync(from, skip, pageSize, ct);
+            var ids = page.Select(t => t.Id).ToList();
+            var known = await db.Meetings.AsNoTracking()
+                .Where(m => m.Source == MeetingSource.Fireflies && ids.Contains(m.GranolaNoteId))
+                .Select(m => new { m.GranolaNoteId, m.ExportPending, m.NotesStatus, m.TranscriptStatus, m.SourceStatus })
+                .ToDictionaryAsync(m => m.GranolaNoteId, ct);
+
+            foreach (var call in page)
+            {
+                if (string.IsNullOrEmpty(call.Id) || !seen.Add(call.Id)) continue;
+                counters.NotesDiscovered++;
+                progress.Discovered();
+                if (known.TryGetValue(call.Id, out var k)
+                    && !k.ExportPending
+                    && k.NotesStatus == ContentStatus.Available
+                    && k.TranscriptStatus == ContentStatus.Available
+                    && k.SourceStatus == SourceStatus.Active)
+                {
+                    counters.MeetingsSkipped++;
+                    continue;
+                }
+                items.Add(new WorkItem(call.Id, Fetch: true, Source: MeetingSource.Fireflies));
+            }
+            if (page.Count < pageSize) break;
+        }
+        return items;
+    }
+
     private static async Task MarkDeleted(IAppDbContext db, string noteId, CancellationToken ct)
     {
-        var m = await db.Meetings.FirstOrDefaultAsync(x => x.GranolaNoteId == noteId, ct);
+        var m = await db.Meetings.FirstOrDefaultAsync(x => x.GranolaNoteId == noteId && x.Source == MeetingSource.Granola, ct);
         if (m is null || m.SourceStatus == SourceStatus.Deleted) return;
         m.SourceStatus = SourceStatus.Deleted;
         m.LastSyncError = "Deleted in Granola. Exported files were kept.";
@@ -277,12 +360,12 @@ public sealed class SyncEngine(
         var q = db.Meetings.AsNoTracking().Where(m => m.SourceStatus == SourceStatus.Active
             && (m.ExportPending || m.TranscriptStatus == ContentStatus.Failed || m.LastErrorCategory != ErrorCategory.None));
         if (onlyDue) q = q.Where(m => m.FailureCount <= s.MaxMeetingRetries && (m.NextRetryAt == null || m.NextRetryAt <= now));
-        var pending = await q.Select(m => new { m.Id, m.GranolaNoteId, m.TranscriptStatus, m.LastErrorCategory }).ToListAsync(ct);
+        var pending = await q.Select(m => new { m.Id, m.GranolaNoteId, m.Source, m.TranscriptStatus, m.LastErrorCategory }).ToListAsync(ct);
         foreach (var p in pending.Where(p => !queued.Contains(p.GranolaNoteId)))
         {
             // Re-fetch when the source retrieval failed; otherwise only the export needs to be retried.
             var refetch = p.TranscriptStatus == ContentStatus.Failed || p.LastErrorCategory is ErrorCategory.RateLimited or ErrorCategory.TransientApi or ErrorCategory.InvalidResponse;
-            items.Add(new WorkItem(p.GranolaNoteId, refetch, p.Id));
+            items.Add(new WorkItem(p.GranolaNoteId, refetch, p.Id, p.Source));
         }
     }
 
@@ -290,7 +373,7 @@ public sealed class SyncEngine(
     {
         var q = db.Meetings.AsNoTracking().Where(m => m.SourceStatus == SourceStatus.Active);
         if (ids is { Count: > 0 }) q = q.Where(m => ids.Contains(m.Id));
-        return await q.Select(m => new WorkItem(m.GranolaNoteId, false, m.Id)).ToListAsync(ct);
+        return await q.Select(m => new WorkItem(m.GranolaNoteId, false, m.Id, m.Source)).ToListAsync(ct);
     }
 
     private static string? Truncate(string? s, int max) => s is null || s.Length <= max ? s : s[..max];

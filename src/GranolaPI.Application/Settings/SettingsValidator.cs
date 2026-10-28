@@ -20,6 +20,7 @@ public static class SettingsValidator
             if (s.MaxRequestAttempts is < 1 or > 10) errors.Add(new("sync.maxRequestAttempts", "Request attempts must be between 1 and 10."));
             if (s.MaxMeetingRetries is < 0 or > 50) errors.Add(new("sync.maxMeetingRetries", "Meeting retries must be between 0 and 50."));
             if (s.IncrementalOverlapMinutes is < 0 or > 1440) errors.Add(new("sync.incrementalOverlapMinutes", "Overlap must be between 0 and 1440 minutes."));
+            if (s.FirefliesLookbackDays is < 1 or > 60) errors.Add(new("sync.firefliesLookbackDays", "Fireflies look-back must be between 1 and 60 days."));
         }
         if (c is not null)
         {

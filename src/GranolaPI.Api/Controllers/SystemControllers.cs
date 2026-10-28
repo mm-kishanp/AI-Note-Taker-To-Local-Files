@@ -23,7 +23,8 @@ public sealed class HealthController(AppDbContext db, ISecretProvider secrets, S
         var dbOk = await db.Database.CanConnectAsync(ct);
         return new HealthDto(dbOk ? "Healthy" : "Degraded",
             Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "1.0.0",
-            dbOk, secrets.Get(SecretNames.GranolaApiKey) is not null, progress.IsRunning, DateTimeOffset.UtcNow);
+            dbOk, secrets.Get(SecretNames.GranolaApiKey) is not null || secrets.Get(SecretNames.FirefliesApiKey) is not null,
+            progress.IsRunning, DateTimeOffset.UtcNow);
     }
 }
 
@@ -120,6 +121,17 @@ public sealed class SettingsController(ISettingsService settings, IAppPaths path
     [HttpDelete("credentials/granola")]
     public Task<CredentialStatusDto> DeleteGranola(CancellationToken ct) => credentials.DeleteAsync(ct);
 
+    // ---- Fireflies credentials (never returned in full) ----
+
+    [HttpGet("credentials/fireflies")]
+    public Task<CredentialStatusDto> FirefliesStatus(CancellationToken ct) => credentials.StatusAsync(MeetingSource.Fireflies, ct);
+
+    [HttpPut("credentials/fireflies")]
+    public Task<CredentialStatusDto> SetFireflies(SetCredentialRequest req, CancellationToken ct) => credentials.SetAsync(MeetingSource.Fireflies, req, ct);
+
+    [HttpDelete("credentials/fireflies")]
+    public Task<CredentialStatusDto> DeleteFireflies(CancellationToken ct) => credentials.DeleteAsync(MeetingSource.Fireflies, ct);
+
     // ---- Optional AI provider key ----
 
     [HttpGet("credentials/ai")]
@@ -157,6 +169,14 @@ public sealed class GranolaController(CredentialService credentials, IGranolaApi
     /// <summary>Granola folders visible to the key (useful for GranolaFolder rules).</summary>
     [HttpGet("folders")]
     public async Task<IReadOnlyList<GranolaFolder>> Folders(CancellationToken ct) => await api.ListFoldersAsync(ct);
+}
+
+[ApiController]
+[Route("api/fireflies")]
+public sealed class FirefliesController(CredentialService credentials) : ControllerBase
+{
+    [HttpPost("test-connection")]
+    public Task<ConnectionTestDto> Test(CancellationToken ct) => credentials.TestAsync(MeetingSource.Fireflies, ct);
 }
 
 [ApiController]

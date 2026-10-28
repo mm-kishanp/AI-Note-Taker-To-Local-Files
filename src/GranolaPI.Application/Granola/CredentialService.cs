@@ -1,4 +1,5 @@
 using GranolaPI.Application.DTOs;
+using GranolaPI.Application.Fireflies;
 using GranolaPI.Application.Interfaces;
 using GranolaPI.Application.Meetings;
 using GranolaPI.Application.Settings;
@@ -6,56 +7,69 @@ using GranolaPI.Domain.Enums;
 
 namespace GranolaPI.Application.Granola;
 
-/// <summary>Manages the Granola API key. The full key is never returned; only a masked form.</summary>
-public sealed class CredentialService(ICredentialStore store, ISecretProvider secrets, IGranolaApiClient api, ISettingsService settings, IClock clock)
+/// <summary>Manages the Granola and Fireflies API keys. The full key is never returned; only a masked form.</summary>
+public sealed class CredentialService(ICredentialStore store, ISecretProvider secrets, IGranolaApiClient api, IFirefliesApiClient fireflies,
+    ISettingsService settings, IClock clock)
 {
-    public async Task<CredentialStatusDto> StatusAsync(CancellationToken ct)
+    public async Task<CredentialStatusDto> StatusAsync(CancellationToken ct) => await StatusAsync(MeetingSource.Granola, ct);
+
+    public async Task<CredentialStatusDto> StatusAsync(MeetingSource source, CancellationToken ct)
     {
-        var secret = secrets.Get(SecretNames.GranolaApiKey);
-        var state = await settings.GetSectionAsync<GranolaConnectionState>(SettingKeys.GranolaConnection, ct);
+        var secret = secrets.Get(SecretNames.ForSource(source));
+        var state = await settings.GetSectionAsync<GranolaConnectionState>(StateKey(source), ct);
         return new CredentialStatusDto(
             secret is not null, secret?.Source, secret is null ? null : Mask(secret.Value),
             store.CanWrite, store.StoreName,
             state.LastCheckSucceeded, state.LastCheckedAt, state.LastSuccessAt, state.LastError, state.LastErrorCategory);
     }
 
-    public async Task<CredentialStatusDto> SetAsync(SetCredentialRequest req, CancellationToken ct)
+    public Task<CredentialStatusDto> SetAsync(SetCredentialRequest req, CancellationToken ct) => SetAsync(MeetingSource.Granola, req, ct);
+
+    public async Task<CredentialStatusDto> SetAsync(MeetingSource source, SetCredentialRequest req, CancellationToken ct)
     {
+        var name = SecretNames.ForSource(source);
         var key = req.ApiKey?.Trim() ?? "";
         if (key.Length < 10 || key.Length > 512 || key.Any(char.IsWhiteSpace))
-            throw ValidationException.Single("apiKey", "Enter the API key exactly as shown in Granola (Settings → Connectors → API keys).");
+            throw ValidationException.Single("apiKey", source == MeetingSource.Fireflies
+                ? "Enter the API key exactly as shown in Fireflies (Integrations → Fireflies API)."
+                : "Enter the API key exactly as shown in Granola (Settings → Connectors → API keys).");
         if (!store.CanWrite)
-            throw ValidationException.Single("apiKey", $"{store.StoreName} is read-only on this platform. Set the GRANOLA_API_KEY environment variable instead.");
+            throw ValidationException.Single("apiKey", $"{store.StoreName} is read-only on this platform. Set the {EnvVar(source)} environment variable instead.");
 
-        var previous = store.Read(SecretNames.GranolaApiKey);
-        store.Write(SecretNames.GranolaApiKey, key);
+        var previous = store.Read(name);
+        store.Write(name, key);
         if (req.Validate)
         {
-            var result = await TestAsync(ct);
+            var result = await TestAsync(source, ct);
             if (!result.Success && result.ErrorCategory is ErrorCategory.Authentication)
             {
-                // Don't keep a key that Granola rejects; restore the previous one.
-                if (previous is null) store.Delete(SecretNames.GranolaApiKey);
-                else store.Write(SecretNames.GranolaApiKey, previous);
-                throw ValidationException.Single("apiKey", $"Granola rejected this key: {result.Message}");
+                // Don't keep a key that the service rejects; restore the previous one.
+                if (previous is null) store.Delete(name);
+                else store.Write(name, previous);
+                throw ValidationException.Single("apiKey", $"{source} rejected this key: {result.Message}");
             }
         }
-        return await StatusAsync(ct);
+        return await StatusAsync(source, ct);
     }
 
-    public async Task<CredentialStatusDto> DeleteAsync(CancellationToken ct)
+    public Task<CredentialStatusDto> DeleteAsync(CancellationToken ct) => DeleteAsync(MeetingSource.Granola, ct);
+
+    public async Task<CredentialStatusDto> DeleteAsync(MeetingSource source, CancellationToken ct)
     {
-        if (store.CanWrite) store.Delete(SecretNames.GranolaApiKey);
-        await settings.SaveSectionAsync(SettingKeys.GranolaConnection, new GranolaConnectionState(), ct);
-        return await StatusAsync(ct);
+        if (store.CanWrite) store.Delete(SecretNames.ForSource(source));
+        await settings.SaveSectionAsync(StateKey(source), new GranolaConnectionState(), ct);
+        return await StatusAsync(source, ct);
     }
 
-    public async Task<ConnectionTestDto> TestAsync(CancellationToken ct)
+    public Task<ConnectionTestDto> TestAsync(CancellationToken ct) => TestAsync(MeetingSource.Granola, ct);
+
+    public async Task<ConnectionTestDto> TestAsync(MeetingSource source, CancellationToken ct)
     {
-        var result = await api.TestConnectionAsync(ct);
-        var state = await settings.GetSectionAsync<GranolaConnectionState>(SettingKeys.GranolaConnection, ct);
+        var result = source == MeetingSource.Fireflies ? await fireflies.TestConnectionAsync(ct) : await api.TestConnectionAsync(ct);
+        var key = StateKey(source);
+        var state = await settings.GetSectionAsync<GranolaConnectionState>(key, ct);
         var now = clock.UtcNow;
-        await settings.SaveSectionAsync(SettingKeys.GranolaConnection, state with
+        await settings.SaveSectionAsync(key, state with
         {
             LastCheckedAt = now,
             LastCheckSucceeded = result.Success,
@@ -65,6 +79,13 @@ public sealed class CredentialService(ICredentialStore store, ISecretProvider se
         }, ct);
         return new ConnectionTestDto(result.Success, result.ErrorCategory, result.Message, result.CredentialSource);
     }
+
+    public bool IsConfigured(MeetingSource source) => secrets.Get(SecretNames.ForSource(source)) is not null;
+
+    private static string StateKey(MeetingSource source) =>
+        source == MeetingSource.Fireflies ? SettingKeys.FirefliesConnection : SettingKeys.GranolaConnection;
+
+    private static string EnvVar(MeetingSource source) => source == MeetingSource.Fireflies ? "FIREFLIES_API_KEY" : "GRANOLA_API_KEY";
 
     public static string Mask(string secret) =>
         secret.Length <= 8 ? new string('•', secret.Length) : $"{secret[..4]}{new string('•', 8)}{secret[^4..]}";

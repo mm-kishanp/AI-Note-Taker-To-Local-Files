@@ -5,10 +5,10 @@ Meeting notes and transcripts are often confidential. The app is designed to run
 ## Credentials
 
 - **Windows desktop:** the Granola key (and the optional Anthropic key) is stored in **Windows Credential Manager** as generic credentials (`GranolaProjectIntelligence:GranolaApiKey`), encrypted by the OS per user. You can see or remove it under Control Panel → Credential Manager → Windows Credentials.
-- **Servers and containers:** the app cannot write secrets. Supply them as `GRANOLA_API_KEY` / `ANTHROPIC_API_KEY` environment variables, or through a secrets manager mapped to configuration.
+- **Servers and containers:** the app cannot write secrets. Supply them as `GRANOLA_API_KEY` / `FIREFLIES_API_KEY` / `ANTHROPIC_API_KEY` environment variables, or through a secrets manager mapped to configuration.
 - Keys are never stored in the database or in settings JSON, never sent to the browser (the UI shows only a masked form such as `grn_••••••••abcd`), and never logged: the file logger redacts `grn_…`, `sk-ant-…` and `Bearer …` patterns.
 - A new key is validated against Granola before it is kept. If Granola rejects it with 401, the previous key is restored.
-- Revoke a key in Granola (Settings → Connectors → API keys), then remove it in the app (Settings → Granola Connection → Remove).
+- Revoke a key in Granola (Settings → Connectors → API keys), then remove it in the app (Settings → Connections → Remove key).
 
 > The earlier Node script (`tools/node-cli`) read the key from a plain-text `config.json`. That file is git-ignored. Once the key is stored in the app, delete the key from that file, or delete the file.
 

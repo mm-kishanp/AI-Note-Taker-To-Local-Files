@@ -44,6 +44,11 @@ public sealed record SyncSettings
     public int MaxMeetingRetries { get; init; } = 5;
     /// <summary>Overlap applied to the incremental checkpoint to tolerate clock skew.</summary>
     public int IncrementalOverlapMinutes { get; init; } = 10;
+    /// <summary>
+    /// Fireflies has no "updated since" filter and finishes transcripts and AI notes some time after
+    /// the call, so each incremental run re-lists calls from this many days before the last run.
+    /// </summary>
+    public int FirefliesLookbackDays { get; init; } = 3;
 }
 
 public sealed record ClassificationSettings

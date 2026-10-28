@@ -44,6 +44,7 @@ public sealed class MeetingService(
         if (q.ExportStatus is { } es) query = query.Where(m => m.ExportStatus == es);
         if (q.TranscriptStatus is { } ts) query = query.Where(m => m.TranscriptStatus == ts);
         if (q.NeedsReview is { } nr) query = query.Where(m => m.NeedsReview == nr);
+        if (q.Source is { } src) query = query.Where(m => m.Source == src);
 
         query = (q.Sort?.ToLowerInvariant(), q.Desc) switch
         {
@@ -84,7 +85,8 @@ public sealed class MeetingService(
         m.ExportStatus,
         m.SourceStatus,
         m.LastSuccessfulFetchAt is { } f ? new DateTimeOffset(f, TimeSpan.Zero) : null,
-        m.LastSyncError);
+        m.LastSyncError,
+        m.Source);
 
     public async Task<MeetingDetailDto> GetAsync(Guid id, CancellationToken ct)
     {

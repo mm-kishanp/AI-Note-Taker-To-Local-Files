@@ -71,6 +71,8 @@ public sealed class RequestProtectionMiddleware(RequestDelegate next, IConfigura
         http.Response.Headers["Referrer-Policy"] = "no-referrer";
 
         var path = http.Request.Path;
+        // API data is live state and may include meeting content: never let the browser cache it.
+        if (path.StartsWithSegments("/api")) http.Response.Headers.CacheControl = "no-store";
         if (path.StartsWithSegments("/api") && !path.StartsWithSegments("/api/health"))
         {
             var token = config["Security:ApiToken"];

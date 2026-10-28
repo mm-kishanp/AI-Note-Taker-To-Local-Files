@@ -17,7 +17,7 @@ C:\Apps\GranolaPI\GranolaPI.Api.exe                # http://127.0.0.1:5080
 
 - The database is created and migrated automatically at startup, in `C:\Apps\GranolaPI\data\`. To keep data elsewhere, set `App:BaseDirectory` or `App:DataDirectory` in `appsettings.json`.
 - To start the app at log-on, create a Task Scheduler task that runs `GranolaPI.Api.exe` with "Start in" set to the install folder, triggered at log-on.
-- First run: open the UI, then go to Settings → Granola Connection → paste the key → Test connection. After that, choose the export root and run **Sync now**.
+- First run: open the UI, then go to Settings → Connections → paste the Granola key (and optionally the Fireflies key) → Save & verify. After that, choose the export root and run **Sync now**.
 
 ## Development
 

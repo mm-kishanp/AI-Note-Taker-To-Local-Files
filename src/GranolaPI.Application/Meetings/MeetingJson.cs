@@ -60,6 +60,7 @@ public static class MeetingJson
         var classification = m.Classification();
         return new MeetingDocument
         {
+            Source = m.Source,
             GranolaNoteId = m.GranolaNoteId,
             Title = m.Title,
             MeetingDate = m.MeetingDate(),

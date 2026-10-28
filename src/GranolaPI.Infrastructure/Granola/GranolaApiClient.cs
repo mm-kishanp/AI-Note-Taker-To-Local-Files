@@ -14,7 +14,7 @@ namespace GranolaPI.Infrastructure.Granola;
 /// Spaces requests to stay under Granola's documented limits (burst 25 per 5s, 5 requests/second
 /// sustained) across every client instance in the process.
 /// </summary>
-public sealed class GranolaRequestThrottle
+public class GranolaRequestThrottle
 {
     private readonly SemaphoreSlim _gate = new(1, 1);
     private DateTimeOffset _next = DateTimeOffset.MinValue;
