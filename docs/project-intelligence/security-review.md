@@ -1,29 +1,43 @@
 # Security Review
 
-Last reviewed: YYYY-MM-DD
+Last reviewed: 2026-10-28
 
-Scope: [Areas inspected; areas not inspected]
-
-This is an evidence-based repository review, not a penetration test or compliance certification.
+- Evidence scope: `src/GranolaPI.Api/Middleware/Middleware.cs`, `src/GranolaPI.Api/Program.cs`, `appsettings.json`, `docker-compose.yml`, `Dockerfile`, all controllers, `ExportBrowserService.cs`, `PathTemplates.cs` (`SafePath`, `FileNames`), `AtomicFile.cs`, `CredentialStores.cs`, `CredentialService.cs`, `FileLogger.cs` (`SecretRedactor`), `AnthropicAiClassifier.cs`, the frontend API client and Markdown component (via a sub-audit), `tests/GranolaPI.IntegrationTests/ApiIntegrationTests.cs`. The existing user-facing policy is [docs/SECURITY.md](../SECURITY.md); this page verifies it against code. No dynamic testing or dependency vulnerability scan was run.
+- Threat model (Inferred, High): a single trusted user on their own machine; the main threats are other websites in the user's browser (CSRF, DNS rebinding), other hosts on the network, leakage of API keys or meeting content, untrusted meeting content (prompt injection, Markdown/HTML injection, path injection through titles) and, in server mode, anyone who can reach the port.
 
 ## Security-sensitive surfaces
+
 | Surface | Expected control | Implementation evidence | Status | Notes |
-|---|---|---|---|---|
-| Authentication | [Mechanism] | [Paths] | Verified / Inferred / Unknown | |
-| Authorization | | | | |
-| Tenant/data isolation | | | | |
-| Input validation / injection | | | | |
-| Secret management | [Where secrets live — names only] | | | |
-| Sensitive data in logs | | | | |
-| Dependencies / supply chain | [Lockfiles, CI scanning] | | | |
-| Transport, CORS, headers | | | | |
+| --- | --- | --- | --- | --- |
+| Authentication | Loopback-only by default; optional shared bearer token for remote/server use | `Middleware.cs:76-95` (constant-time compare `CryptographicOperations.FixedTimeEquals`); compose requires `GPI_API_TOKEN` (`docker-compose.yml`) | Verified | No user accounts. Loopback and CSRF branches are tested; **the token and remote-rejection branches have no test** (SEC-001). `RemoteIpAddress == null` is treated as loopback (`Middleware.cs:80`), which is safe in Kestrel but should be pinned by a test. |
+| Authorization | None needed for a single user; every authenticated caller has full control | No `[Authorize]`, no policies (Verified) | Verified | A token holder can change export roots, browse folder names anywhere and read any `.md` under a root they choose (SEC-002). |
+| Tenant/data isolation | Not applicable — single user | `client-matrix.md` | Not applicable | — |
+| Input validation / injection | Validate settings, templates, IDs; guard paths; no SQL string building; no shell | `SettingsValidator`, `ExportLayout.Validate`, `PathTemplates.Validate` (rejects rooted paths, `..`, invalid chars), `FileNames.SanitizeSegment` (reserved names, length cap 120), `SafePath.Combine/IsUnder`, `GranolaApiClient.ValidateNoteId`, `FirefliesApiClient.ValidateId`, EF Core LINQ only (no raw SQL found), `ShellLauncher` uses `ArgumentList` without a shell | Verified | Path traversal through `/api/exports/file` is tested (`Export_browser_blocks_path_traversal`). Transcript text is escaped before Markdown output (`MarkdownRenderer.EscapeTranscriptText`). |
+| CSRF / cross-origin | Custom header on state changes + CORS allow-list + Host filtering | `Middleware.cs:97-102`, `Program.cs:40-44`, `AllowedHosts` | Verified | Tests `State_changing_requests_require_the_csrf_header`, `Cross_origin_preflight_from_unknown_site_is_not_allowed`. Compose sets `AllowedHosts: "*"` (SEC-005). |
+| Secret management | Keys in OS vault or env vars, never in DB/settings/browser | `CredentialStores.cs` (Windows Credential Manager, per user, `CRED_PERSIST_LOCAL_MACHINE`, unmanaged copy zeroed), `SecretProvider` (env var fallback), `CredentialService.Mask`, keys rejected by the source are rolled back (`CredentialService.cs:41-50`) | Verified | Test `Credentials_are_masked_and_never_returned_in_full`. Legacy `tools/node-cli` can still read a plain-text `config.json` (git-ignored). |
+| Sensitive data in logs | Redact keys; avoid logging meeting content | `SecretRedactor` (`grn_…`, `sk-ant-…`, `Bearer …`) applied to message, properties and exception text (`FileLogger.cs:84-102`); logs record note IDs, paths and error messages, not content (sampled) | Verified (partial) | Fireflies keys are not matched unless prefixed by `Bearer` (SEC-003). Export file paths contain meeting titles. |
+| Sensitive data at rest | Meeting content stored locally | SQLite DB stores full notes, summaries and transcripts unencrypted; Markdown files unencrypted | Verified | Relies on OS file permissions (documented in `docs/SECURITY.md`). R-004. |
+| Untrusted content / prompt injection | Meeting data treated as data | AI system prompt marks tagged data as untrusted; JSON-schema output with an enum of project IDs; unknown IDs rejected (`AnthropicAiClassifier.cs:21-87`); UI renders Markdown with `skipHtml`, images converted to links (frontend `Markdown.tsx`) | Verified (code); **untested** | No unit tests for `AnthropicAiClassifier.Parse` (RF-017). |
+| Dependencies / supply chain | Pinned versions, lockfiles, vulnerability scanning | `frontend/package-lock.json` with exact versions; NuGet versions pinned but no `packages.lock.json`; GitHub Actions pinned to major tags (`@v4`, `@v1`); **no Dependabot, `npm audit`, or `dotnet list package --vulnerable` in CI** | Verified | SEC-004. |
+| Transport, CORS, headers | HTTPS for remote, strict CORS, safe headers | `nosniff`, `Referrer-Policy: no-referrer`, `Cache-Control: no-store` on `/api` (`Middleware.cs:70-75`); no HTTPS redirection or HSTS in the app; desktop binds `127.0.0.1:5080`; compose binds `127.0.0.1:8080` and expects a TLS reverse proxy | Verified | Acceptable for loopback; remote use depends on an external proxy (documented). |
+| Error disclosure | No stack traces | `ApiExceptionHandler` hides messages of unexpected 500s outside Development (`Middleware.cs:38`); OpenAPI/Swagger only in Development (tested) | Verified | Non-500 messages (validation, Granola errors) are returned verbatim by design. |
+| Container | Non-root, minimal image | `USER $APP_UID`, `aspnet:10.0` runtime image (`Dockerfile`) | Verified | Base images use floating `10.0` / `22-alpine` tags (not digests). |
 
 ## Findings
+
 | ID | Severity | Finding | Evidence | Verified defect / Concern | Recommended action | Task |
-|---|---|---|---|---|---|---|
-| SEC-001 | Critical/High/Medium/Low | [Finding] | [path:line] | [Classification] | [Action] | [PIDA-xxx] |
+| --- | --- | --- | --- | --- | --- | --- |
+| SEC-001 | Medium | The bearer-token path and the remote-caller rejection path of `RequestProtectionMiddleware` have no automated test, although server/Docker deployment depends on them | `Middleware.cs:76-95`; no `Security:ApiToken` in `tests/` (Verified by grep) | Concern (test gap on the only authentication control) | Add integration tests: missing/wrong/right token, non-loopback caller without token, `/api/health` exemption | PIDA-005 |
+| SEC-002 | Low | Any caller who passes the protection can point the export root at any writable path (`PUT /api/settings`, `POST /api/exports/migrate-root`), create folders anywhere (`validate-path` with `createIfMissing`), list folder names across the file system (`GET /api/exports/directories`) and then read any `.md` file under the chosen root | `SystemControllers.cs:75-89, 200-208`; `ExportBrowserService.cs:98-182` | Concern — by design for a single local user; matters in server mode where the token holder gains file-system-level reach within the container user's rights | Document clearly for server mode; optionally restrict roots to an allow-list (for example under `/data`) when `Security:ApiToken` is set | PIDA-017 |
+| SEC-003 | Low | `SecretRedactor` recognises Granola (`grn_`) and Anthropic (`sk-ant-`) keys and `Bearer` headers, but not bare Fireflies keys | `FileLogger.cs:99-100` | Concern (no code path found that logs a bare key; defence in depth) | Redact known secret values directly (resolve them from `ISecretProvider`) or add a Fireflies pattern | PIDA-012 |
+| SEC-004 | Low | No dependency vulnerability scanning or update automation | `.github/` contains only `.github/workflows/ci.yml` | Concern | Add Dependabot (NuGet, npm, Actions) or `npm audit --audit-level=high` and `dotnet list package --vulnerable` in CI | PIDA-009 |
+| SEC-005 | Low | Docker compose sets `AllowedHosts: "*"`, disabling host filtering (the DNS-rebinding defence) in server mode | `docker-compose.yml` | Concern — mitigated because compose makes the API token mandatory | Set `AllowedHosts` to the proxy host name in production docs | PIDA-017 |
+| SEC-006 | Info | The UI keeps the API token in `sessionStorage`, readable by any script on the origin | `frontend/src/services/api.ts:51-72` (sub-audit) | Concern — mitigated: no raw HTML rendering, `skipHtml` Markdown | None now; keep the "no raw HTML" rule in reviews | — |
 
 ## Not reviewed
-- [Area — why]
 
-Never record secret values, tokens, or private keys. Do not infer that a control exists without verifying its implementation and configuration.
+- Dynamic testing (no running instance was exercised during the audit).
+- Third-party package vulnerabilities (no scanner was run; see SEC-004).
+- The Anthropic SDK's own network behaviour (timeouts, retries, telemetry) — Unknown.
+- `MarkdownRenderer` YAML front-matter quoting for adversarial titles was sampled, not exhaustively reviewed (`Q()` helper, `MarkdownRenderer.cs:243`).
+- `tools/node-cli` beyond the sub-audit summary (legacy).

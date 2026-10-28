@@ -1,41 +1,30 @@
 # SEO Guide
 
-Last reviewed: YYYY-MM-DD
+Last reviewed: 2026-10-28
 
-- Evidence scope: [Front-end sub-projects, page templates, routing, head/meta handling, static files inspected]
-- Applicability: [Applies — public web pages that should be found in search engines / `Not applicable — <evidence>` (for example internal tool behind login, API only, mobile app, CLI)]
-
-How well the project's public pages can be found and understood by search engines, and what to change. If the project has no public web pages, write `Not applicable — <evidence>` above and stop.
+- Evidence scope: `frontend/index.html`, `frontend/public/`, `frontend/src/App.tsx` routes (sub-audit), `Program.cs` hosting, `RequestProtectionMiddleware`.
+- Applicability: **Not applicable — the only web UI is a private, single-user admin SPA** served on `127.0.0.1:5080` (or behind a token in server mode). All content is the user's confidential meeting data loaded from `/api` after the loopback/token check (`Middleware.cs:76-95`); there are no public pages, no marketing site and no content meant to be indexed. No `robots.txt` or sitemap exists (Verified).
 
 ## Rendering
-| Sub-project / site | Rendering (static, server-rendered, client-only SPA, hybrid) | Framework | Evidence |
-|---|---|---|---|
 
-Client-only rendering hides content from crawlers that do not run JavaScript; note it as a finding where it affects public pages.
+| Sub-project / site | Rendering | Framework | Evidence |
+| --- | --- | --- | --- |
+| `frontend/` (served by the API from `wwwroot`) | Client-only SPA | React 18 + Vite | `frontend/index.html`, `Program.cs:67-73` |
 
 ## Checks
-| Check | Result (Follows / Partly / Does not / Not applicable) | Evidence |
-|---|---|---|
-| Unique `<title>` and meta description per page, set from page content | | |
-| Canonical URLs | | |
-| `robots.txt` present and correct; non-production environments not indexable | | |
-| `sitemap.xml` generated and kept current | | |
-| Clean, stable, readable URLs; redirects for moved pages; real 404 status | | |
-| One `<h1>` per page and a logical heading order | | |
-| Images have meaningful `alt` text, sizes, and modern formats | | |
-| Structured data (JSON-LD, schema.org) for the main content types | | |
-| Open Graph and social card tags | | |
-| Language and `hreflang` for multilingual sites | | |
-| Performance: Core Web Vitals risks (large bundles, unoptimized images, layout shift, render-blocking resources) | | |
-| Mobile-friendly, responsive layout | | |
-| Internal linking and navigation crawlable (real links, not only script handlers) | | |
+
+| Check | Result | Evidence |
+| --- | --- | --- |
+| All checks | Not applicable | Private tool; indexing would be undesirable |
 
 ## Findings
+
 | Where | Issue | Impact | Severity | Evidence |
-|---|---|---|---|---|
+| --- | --- | --- | --- | --- |
+| — | None | — | — | — |
 
 ## Recommended changes
-| Change | Why | Effort | Priority | Task |
-|---|---|---|---|---|
 
-Ranking results and traffic are not visible from the code; record measured data only if the user provides it.
+| Change | Why | Effort | Priority | Task |
+| --- | --- | --- | --- | --- |
+| Optional: add `<meta name="robots" content="noindex, nofollow">` to `index.html` | Defence in depth if a server-mode instance is ever exposed publicly behind a proxy | S | P3 | — |

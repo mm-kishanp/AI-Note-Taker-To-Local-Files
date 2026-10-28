@@ -1,11 +1,19 @@
 # Integrations
 
-Last reviewed: YYYY-MM-DD
+Last reviewed: 2026-10-28
+
+- Evidence scope: `src/GranolaPI.Infrastructure/{Granola,Fireflies,Ai,Security,Logging}/`, `src/GranolaPI.Infrastructure/DependencyInjection.cs`, `docs/GRANOLA_API.md`, `docs/FIREFLIES_API.md`, `tools/node-cli/src/api.js`. No live call was made.
+- Confidence: High
 
 | ID | External system | Direction | Protocol/SDK | Purpose | Auth method | Config names (no values) | Failure handling | Evidence |
 |---|---|---|---|---|---|---|---|---|
-| INT-001 | [Service] | Inbound/Outbound | [HTTP/SDK/queue/webhook] | [Purpose] | [OAuth/API key/managed identity] | [ENV_VAR_NAME] | [Timeout/retry/circuit breaker/Unknown] | [Paths] |
+| INT-001 | Granola public API `https://public-api.granola.ai/v1/` | Outbound | HTTPS REST (`HttpClient`, typed client) | List notes (cursor, `created_after`/`updated_after`), get note with transcript, paged transcript, folders | Bearer API key ("Personal notes" scope) | Secret name `GranolaApiKey`: Windows Credential Manager target `GranolaProjectIntelligence:GranolaApiKey`, or `GRANOLA_API_KEY`, or `Secrets:GranolaApiKey` | 100 s timeout; process-wide throttle ≥220 ms between requests; retries on 429/5xx/408/network up to `sync.MaxRequestAttempts` (default 5, clamp 1–10); honours `Retry-After` (cap 60 s) else jittered exponential backoff; 413/`TRANSCRIPT_TOO_LARGE` falls back to paged transcript; 401/403 abort the run; transcript failure recorded separately from notes | `GranolaApiClient.cs:17-296`, `DependencyInjection.cs:36-41`; tests `GranolaApiClientTests.cs` (16) |
+| INT-002 | Fireflies.ai GraphQL `https://api.fireflies.ai/graphql` | Outbound | HTTPS GraphQL POST | `user`, `transcripts(fromDate, limit, skip)`, `transcript(id)` with sentences and AI summary | Bearer API key | `FirefliesApiKey`: Credential Manager, `FIREFLIES_API_KEY`, `Secrets:FirefliesApiKey` | 100 s timeout; throttle ≥1100 ms; same retry model; GraphQL error codes mapped to categories; `retryAfter` from error metadata; incremental runs look back `FirefliesLookbackDays` (default 3) because Fireflies has no update timestamp; a Fireflies outage does not block Granola and vice versa | `FirefliesApiClient.cs`, `SyncEngine.cs:92-109`; tests `FirefliesTests.cs` (11), `FirefliesSyncTests.cs` (5) |
+| INT-003 | Anthropic Claude API | Outbound (opt-in) | `Anthropic` NuGet SDK 13.3.0, Messages API with JSON-schema output | Suggest a project for meetings no rule could classify | API key | `AiApiKey`: Credential Manager, `ANTHROPIC_API_KEY`, `Secrets:AiApiKey`; settings `classification.ai.enabled`, `.model` (default `claude-opus-5-5`), `.includeSummary` | SDK defaults for timeout/retry (Unknown, not configured in code); any exception → warning log, deterministic result kept; refusal → null; unknown project IDs rejected | `AnthropicAiClassifier.cs`, `ClassificationService.cs:68-82`, `AppSettings.cs:79-80`; **no tests** (RF-017) |
+| INT-004 | Windows Credential Manager | Local OS | P/Invoke `advapi32` `CredReadW/CredWriteW/CredDeleteW` | Store API keys per user | OS user session | `Security:UseWindowsCredentialManager` (default true) | `Win32Exception` on read → falls back to configuration (`SecretProvider.Get`) | `CredentialStores.cs:10-110, 137-164` |
+| INT-005 | Local file system and OS shell | Local | `System.IO`, `Process.Start` (`explorer.exe` / `open` / `xdg-open`, argument list, no shell) | Write Markdown, browse exports, open files/folders | Process user permissions | Export settings (`export.rootDirectory`, notes/transcripts roots, templates) | Errors classified as `FilePermission`, `DiskSpace`, `FileConflict`, `Configuration`; per-meeting retry | `AtomicFile.cs`, `ExportBrowserService.cs`, `DependencyInjection.cs:57-70` |
 
-For each integration, document as applicable: timeouts, retries and idempotency, rate limits, webhook signature verification, sandbox vs production endpoints, data shared and its sensitivity, contract tests or mocks, and owner if documented.
+## Not integrated (Verified absent)
 
-Record secret *names and locations* only. Never record values, tokens, or connection strings.
+- No inbound webhooks, queues, email, telemetry or analytics (`docs/SECURITY.md` "The app has no telemetry"; no such packages in any `.csproj` or `package.json`).
+- The legacy `tools/node-cli` calls INT-001 directly with its own client (`tools/node-cli/src/api.js`, ≥250 ms spacing, 5 retries, no request timeout). It reads the key from `GRANOLA_API_KEY` or a plain-text `config.json`.

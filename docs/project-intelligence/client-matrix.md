@@ -1,58 +1,46 @@
 # Client Matrix
 
-Last reviewed: YYYY-MM-DD
+Last reviewed: 2026-10-28
 
-Scope: [Which code, configuration, and client lists were inspected; what was not.]
+- Evidence scope: searched source and configuration for tenant/client selection mechanisms (`tenant`, `ClientId`, `X-Client`, per-client config files, feature flags, per-client folders, build variants). No client list was provided by the user in this session.
+- Confidence: High
 
-Use this page when the codebase serves more than one client (customer, tenant, brand, partner, or deployment) and behavior differs between them. If every client gets identical behavior, write `Not applicable — <evidence>` and stop.
+**Not applicable — single-user, single-deployment application.** Each installation serves one person (one API key set, one SQLite database, no user accounts; `Program.cs`, `Middleware.cs`). There is no tenant selection, no per-client configuration or branding, and no client-specific code path.
+
+**Terminology warning:** the codebase has a domain entity called `Client` (`src/GranolaPI.Domain/Entities/Entities.cs:5-15`, `ClientsController`, `/clients` page). It represents *the user's own customers* (for example the company a meeting was with) and groups projects and classification rules. It is user-entered data, not a software client or tenant, and does not change application behaviour per installation. Do not record those records here.
 
 ## Client list sources
-| Source | Type (user-provided / config / code / database seed / docs) | Date captured | Notes |
-|---|---|---|---|
-| [e.g. "User message"] | user-provided | YYYY-MM-DD | [Names as given] |
 
-A client list given by the user is recorded as-is and labelled `Provided by user, <date>`. It is authoritative for *which clients exist*; behavior per client still needs code evidence.
+| Source | Type | Date captured | Notes |
+|---|---|---|---|
+| Code and configuration search | code | 2026-10-28 | No tenants or deployment variants found |
+| User | user-provided | — | None provided in this session |
 
 ## Clients
-| ID | Client name | Code / key in source | Status (Active / Onboarding / Inactive / Unknown) | Environments / deployments | Source | Evidence |
-|---|---|---|---|---|---|---|
-| CLIENT-001 | [Name] | [`clientCode`, tenant ID name, folder name] | Unknown | [Where it runs] | [user-provided / code] | [paths] |
 
-Record names and codes only. No contacts, contract terms, pricing, credentials, or customer data.
+| ID | Client name | Code / key in source | Status | Environments / deployments | Source | Evidence |
+|---|---|---|---|---|---|---|
+| — | Not applicable — single-user application | — | — | Desktop (Windows) or self-hosted container per user | code | `Program.cs`, `docker-compose.yml` |
 
 ## How client-specific behavior is implemented
-| Mechanism | Where | How a client is selected at runtime | Evidence |
-|---|---|---|---|
-| [Per-client config file, feature flag, tenant setting row, `if`/`switch` on client code, per-client folder/module, theme/branding, build variant, separate deployment, DB schema per client] | [path] | [header, subdomain, login claim, env var, build flag] | [path:line] |
+
+Not applicable — no mechanism exists. Behaviour differences are per installation, controlled by the installing user's settings (`ApplicationSettings` rows) and environment variables, not by a client key.
 
 ## Client-specific code locations
-| Location | Client(s) | What it changes | Classification | Evidence |
-|---|---|---|---|---|
-| [path or symbol] | CLIENT-001 | [Behavior difference] | Verified / Inferred / Unknown | [path:line] |
 
-Flag hardcoded client names, IDs, or codes in business logic here; they are a common source of regressions.
+Not applicable — none found (Verified by search for client/tenant conditionals).
 
 ## Feature availability by client
-Rows are `FEAT-NNN` from `feature-inventory.md`. List only features whose availability or behavior differs between clients; note "all other features: same for every client" below the table if verified.
 
-| Feature | CLIENT-001 | CLIENT-002 | Evidence / notes |
-|---|---|---|---|
-| FEAT-001 [Name] | Enabled / Disabled / Customized / Unknown | | [flag name, config key, path] |
-
-- **Enabled**: standard behavior is reachable for this client.
-- **Disabled**: switched off or unreachable for this client.
-- **Customized**: client-specific variation; describe it in the next section.
-- **Unknown**: no evidence either way.
+Not applicable. Every feature in [feature-inventory.md](feature-inventory.md) is available to every installation; desktop-only features (Credential Manager writes, open in Explorer) depend on the host OS, not on a client (see FEAT-013, FEAT-015).
 
 ## Customizations per client
-### CLIENT-001 — [Name]
-- **Customizations**: [What differs and where — paths, flags, config keys]
-- **Integrations**: [`INT-NNN` used only or differently by this client]
-- **Configuration**: [Variable/key names only, never values]
-- **Tests**: [Tests that exercise this client's path, or "none found"]
-- **Known issues / gaps**: [`PIDA-NNN`, `Q-NNN`, `R-NNN`]
+
+Not applicable.
 
 ## Risks and gaps
+
 | Item | Clients affected | Evidence | Suggested action |
 |---|---|---|---|
-| [Untested client branch, hardcoded ID, divergent copy of shared code] | | | |
+| Confusion between the domain `Client` entity and PIDA's client concept | — | `Entities.cs:5` | Keep this note; use "customer" in prose when ambiguous |
+| Future multi-user hosting would need authentication, per-user data and secrets; none exist today | — | `Middleware.cs:60-105` | Q-008 |

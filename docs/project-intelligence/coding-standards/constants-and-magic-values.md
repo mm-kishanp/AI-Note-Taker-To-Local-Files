@@ -1,37 +1,44 @@
 # Constants and Magic Values
 
-Last reviewed: YYYY-MM-DD
+Last reviewed: 2026-10-28
 
-- Evidence scope: [Sub-projects and files sampled for this topic; how many; what was not sampled]
-- Status: Consistent / Mostly consistent / Inconsistent / Not applicable / Not assessed
+- Evidence scope: API clients, sync engine, worker, export services, middleware, DI registration, settings defaults; frontend via sub-audit.
+- Status: Mostly consistent
 - Back to: [overview.md](overview.md)
 
-How literal values are handled: named constants, enums, configuration, and the absence of hardcoded environment- or client-specific values.
-
 ## Standard for this project
-| Rule | Source (documented: path / inferred from dominant pattern) | Enforced by (formatter, linter rule, analyzer, CI, review, nothing) |
-|---|---|---|
-| [Rule] | [Verified: path / Inferred: N of M sampled files follow it] | |
+
+| Rule | Source | Enforced by |
+| --- | --- | --- |
+| Tunables a user may change live in typed settings with defaults (`ExportSettings`, `SyncSettings`, `ClassificationSettings`, `LoggingSettings`) | Verified: `src/GranolaPI.Application/Settings/AppSettings.cs` | `SettingsValidator` |
+| Fixed limits are `private const` / `static readonly` with a descriptive name | Inferred: `MaxNodes`, `MaxReadBytes` (`ExportBrowserService.cs:21-22`), `LeaseDuration` (`SyncEngine.cs:30`), `Tick` (`SynchronizationWorker.cs:23`), `MaxBackoff`, `BaseAddress`/`Endpoint`, `MaxStemLength`, `TempSuffix` | Review |
+| Header names and setting/secret keys are constants | Verified: `RequestProtectionMiddleware.CsrfHeader`, `SettingKeys`, `SecretNames` | Review |
 
 ## Checks
-| Check | Result (Follows / Partly / Does not / Not applicable) | Evidence |
-|---|---|---|
-| No unexplained numeric or string literals in business logic; values are named constants or enums | | |
-| Constants live in a predictable place (per module or a shared constants file), not redefined in several files | | |
-| Environment-specific values (URLs, hostnames, ports, timeouts, limits) come from configuration, not code | | |
-| No hardcoded client, tenant, or user IDs, codes, or names in business logic (cross-check `client-matrix.md`) | | |
-| No credentials, keys, or connection strings in code (record locations only, never values) | | |
-| Status values, roles, and types use enums or constants shared with the database and API contracts | | |
+
+| Check | Result | Evidence |
+| --- | --- | --- |
+| No unexplained literals in conditions | Partly | `free < 100L * 1024 * 1024` (`ExportBrowserService.cs:151`); retry backoff `5 * Math.Pow(2, …)`, `720` minutes (`MeetingProcessor.cs:180`, explained by a comment); `Take(500)` folder listing (`ExportBrowserService.cs:177`); `Truncate(…, 1000)` (`SyncEngine.cs:192`) |
+| No hardcoded URLs/hosts | Follows | External endpoints are named constants (`GranolaApiClient.BaseAddress`, `FirefliesApiClient.Endpoint`); local defaults in `appsettings.json` |
+| No hardcoded client IDs | Not applicable | — |
+| Timeouts named | Partly | `TimeSpan.FromSeconds(100)` HTTP timeouts inline in DI (`src/GranolaPI.Infrastructure/DependencyInjection.cs:39-46`); `TimeSpan.FromSeconds(10)` in `StopAsync`; `"GranolaProjectIntelligenceSync/1.0"` user agent duplicated |
+| Frontend | Partly | Polling intervals (1.5 s / 10 s / 30 s / 60 s), notification timeouts, page sizes inline (sub-audit) |
 
 ## How the code does it today
-[Plain description of the current practice, with 2–3 good examples to copy (paths and symbols).]
+
+Copy `ExportBrowserService`'s `MaxNodes`/`MaxReadBytes` constants and the settings-record defaults in `AppSettings.cs`.
 
 ## Deviations
-| Where | What differs from the standard | Severity (High / Medium / Low) | Evidence |
-|---|---|---|---|
+
+| Where | What differs from the standard | Severity | Evidence |
+| --- | --- | --- | --- |
+| `src/GranolaPI.Infrastructure/DependencyInjection.cs:39-46` | Duplicated inline timeout and user-agent string | Low | file |
+| `ExportBrowserService.cs:151,177` | Inline 100 MB warning threshold and 500-entry cap | Low | file |
+| `frontend/src/hooks/useSystem.ts:7-20` | Inline polling intervals | Low | sub-audit |
 
 ## Recommended changes
-| Change | Code or standard | Why | Effort (S / M / L) | Priority | Task |
-|---|---|---|---|---|---|
 
-Significant deviations also go to `review-findings.md` (as `RF-NNN`) or `tech-debt.md` (as `TD-NNN`), and actionable changes to `BACKLOG.md`.
+| Change | Code or standard | Why | Effort | Priority | Task |
+| --- | --- | --- | --- | --- | --- |
+| Name the HTTP timeout and user agent once (`HttpDefaults`) | Code | Single place to tune | S | P3 | TD-004 |
+| Collect frontend polling intervals in one `constants.ts` | Code | Easier tuning | S | P3 | TD-004 |
