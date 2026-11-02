@@ -56,6 +56,8 @@ For details see [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 Double-click `run.bat`. It builds what is missing, starts the app at http://127.0.0.1:5080 and opens your browser. `stop.bat` stops it. Other modes: `run.bat rebuild` (after pulling changes), `run.bat dev` (hot-reload UI) and `run.bat test`.
 
+To keep it always running instead, run `setup.bat [port] [minutes]` (default `5080`, `60`). It publishes the app to `publish\`, registers a "Granola PI" Task Scheduler task that starts it hidden at every Windows sign-in and restarts it after a crash, and turns on scheduled sync at that interval. `setup.bat stop` stops it until next sign-in, `setup.bat uninstall` removes the task (data is kept). Re-run `setup.bat` after pulling changes.
+
 The manual equivalent:
 
 ```powershell

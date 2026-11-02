@@ -9,7 +9,7 @@ Last reviewed: 2026-10-28
 
 This is a **self-hosted, single-user app with no central deployment**. Each user builds and runs their own copy. There are two documented ways:
 
-1. **Windows desktop (primary):** build the UI into the API's `wwwroot`, then either double-click `run.bat` (build + run from source) or `dotnet publish` and run `GranolaPI.Api.exe`, optionally from Task Scheduler at log-on. It listens on `127.0.0.1:5080` only.
+1. **Windows desktop (primary):** build the UI into the API's `wwwroot`, then either double-click `run.bat` (build + run from source) or `dotnet publish` and run `GranolaPI.Api.exe`, optionally from Task Scheduler at log-on. `setup.bat [port] [minutes]` automates the latter: publishes to `publish\`, registers the per-user "Granola PI" logon task (`scripts/setup-autostart.ps1`, launcher `scripts/start-background.ps1`, restart on failure, no time limit, Startup-folder fallback when task registration is blocked), and enables `sync.autoSyncEnabled` / `sync.intervalMinutes` via `PUT /api/settings`. It runs as the signed-in user, not as a service, because keys live in that user's Windows Credential Manager. It listens on `127.0.0.1:5080` only (or the port given to `setup.bat`).
 2. **Server / NAS:** `docker compose up -d` builds a multi-stage image locally and runs it with keys and an API token from a `.env` file, bound to `127.0.0.1:8080` behind a user-provided TLS reverse proxy.
 
 There is no CD pipeline, no published image or package, no versioning and no release tags (Verified: `git tag` is empty; CI has no publish step).
