@@ -87,6 +87,24 @@ describe('Settings: Granola credentials', () => {
         expect(put.body).toEqual({ apiKey: 'ff_key_1234567890', validate: true });
         expect(await screen.findByText('ff_k••••••••7890')).toBeInTheDocument();
     });
+    it('configures the WhisperAI key separately from the other keys', async () => {
+        const { calls } = mockFetch([
+            route('GET /api/settings/credentials/granola', credential()),
+            route('GET /api/settings/credentials/whisperai', credential({ configured: false, maskedKey: null, source: null, lastCheckSucceeded: null })),
+            route('PUT /api/settings/credentials/whisperai', credential({ maskedKey: 'wai_••••••••7890' })),
+        ]);
+        renderWithProviders(_jsx(SettingsPage, {}));
+        expect(await screen.findByRole('heading', { name: 'WhisperAI connection' })).toBeInTheDocument();
+        const input = await screen.findByLabelText('API key');
+        await userEvent.type(input, 'wai_key_1234567890');
+        const whisperAi = screen.getByRole('heading', { name: 'WhisperAI connection' }).closest('.mantine-Paper-root');
+        await userEvent.click(within(whisperAi).getByRole('button', { name: /save & verify/i }));
+        await waitFor(() => expect(calls.some((c) => c.method === 'PUT')).toBe(true));
+        const put = calls.find((c) => c.method === 'PUT');
+        expect(put.url.pathname).toBe('/api/settings/credentials/whisperai');
+        expect(put.body).toEqual({ apiKey: 'wai_key_1234567890', validate: true });
+        expect(await screen.findByText('wai_••••••••7890')).toBeInTheDocument();
+    });
 });
 describe('SaveMappingModal', () => {
     it('previews other matching meetings and requires confirmation before bulk apply', async () => {

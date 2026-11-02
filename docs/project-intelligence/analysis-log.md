@@ -2,6 +2,13 @@
 
 Append an entry for each significant audit or refresh.
 
+## 2026-11-02 — WhisperAI integration (PIDA-019)
+
+- Trigger: user request to add the WhisperAI API (<https://whisperai.com/whisper-api/docs>) like the existing Fireflies integration.
+- Sources: the docs page is a client-rendered SPA, so content came from its published `whisperai-openapi.json` and `whisperai-api.postman_collection.json` (found via the page's JS bundles) plus the docs chunk's examples. Downloaded to the session scratchpad only.
+- Verified: base URL, raw `Authorization: wai_…` header, list/get/sentences endpoints, `before_id` paging, statuses, error codes (OpenAPI). Inferred (high): utterance fields and millisecond unit from the docs example (`"start": 240, "end": 26560`) → Q-012.
+- Changes and verification: see PIDA-019 in `BACKLOG.md` and `PROGRESS.md`.
+
 ## 2026-10-28 — Initial PIDA project audit (whole repository)
 
 - Trigger: `/project-audit` (first audit; every knowledge-base page was still a template).

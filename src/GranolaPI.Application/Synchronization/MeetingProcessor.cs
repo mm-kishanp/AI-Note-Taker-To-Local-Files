@@ -4,6 +4,7 @@ using GranolaPI.Application.Fireflies;
 using GranolaPI.Application.Granola;
 using GranolaPI.Application.Interfaces;
 using GranolaPI.Application.Meetings;
+using GranolaPI.Application.WhisperAi;
 using GranolaPI.Domain.Entities;
 using GranolaPI.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
@@ -11,8 +12,10 @@ using Microsoft.Extensions.Logging;
 
 namespace GranolaPI.Application.Synchronization;
 
-/// <param name="GranolaNoteId">The source's ID: a Granola note ID or a Fireflies transcript ID.</param>
-public sealed record WorkItem(string GranolaNoteId, bool Fetch, Guid? MeetingId = null, MeetingSource Source = MeetingSource.Granola);
+/// <param name="GranolaNoteId">The source's ID: a Granola note ID, a Fireflies transcript ID or a WhisperAI transcript ID.</param>
+/// <param name="SourceCreatedAt">Creation time from the source's listing, for sources whose detail endpoint omits it (WhisperAI).</param>
+public sealed record WorkItem(string GranolaNoteId, bool Fetch, Guid? MeetingId = null, MeetingSource Source = MeetingSource.Granola,
+    DateTimeOffset? SourceCreatedAt = null);
 
 public sealed record ProcessResult(Guid? MeetingId, string Outcome, ErrorCategory Category, bool Retryable, string? Message, IReadOnlyList<Guid> ProjectIds)
 {
@@ -27,6 +30,7 @@ public sealed class MeetingProcessor(
     IAppDbContext db,
     IGranolaApiClient api,
     IFirefliesApiClient fireflies,
+    IWhisperAiApiClient whisperAi,
     ClassificationService classification,
     MeetingExporter exporter,
     IClock clock,
@@ -55,9 +59,15 @@ public sealed class MeetingProcessor(
             GranolaNoteFetch? fetched;
             try
             {
-                fetched = item.Source == MeetingSource.Fireflies
-                    ? await fireflies.GetTranscriptAsync(item.GranolaNoteId, ct) is { } call ? FirefliesMapper.ToFetch(call) : null
-                    : await api.GetNoteAsync(item.GranolaNoteId, includeTranscript: true, ct);
+                fetched = item.Source switch
+                {
+                    MeetingSource.Fireflies => await fireflies.GetTranscriptAsync(item.GranolaNoteId, ct) is { } call ? FirefliesMapper.ToFetch(call) : null,
+                    // A retry has no listing data; keep the creation time stored on the first sync.
+                    MeetingSource.WhisperAi => await whisperAi.GetTranscriptAsync(item.GranolaNoteId, ct) is { } t
+                        ? WhisperAiMapper.ToFetch(t, item.SourceCreatedAt ?? (meeting is null ? null : new DateTimeOffset(DateTime.SpecifyKind(meeting.CreatedAt, DateTimeKind.Utc))))
+                        : null,
+                    _ => await api.GetNoteAsync(item.GranolaNoteId, includeTranscript: true, ct),
+                };
             }
             catch (GranolaApiException ex)
             {

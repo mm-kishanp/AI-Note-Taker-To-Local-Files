@@ -81,4 +81,14 @@ No ADR folder existed before the 2026-10-28 audit. ADR-001 – ADR-007 record pr
 - **Evidence:** `Directory.Build.props`, `.editorconfig`, `ci.yml`.
 - **Revisit when:** —
 
+## ADR-010 — WhisperAI as a third meeting source, modelled on Fireflies
+- **Date:** 2026-11-02
+- **Status:** Accepted (user request: "implement the same" as the existing AI notetaker integration, using the same API-key handling)
+- **Context:** WhisperAI is a transcription API, not a meeting notetaker: transcripts have no title, attendees, owner or summary; `GET /transcript/{id}` omits the creation time; listing is newest-first with a `before_id` cursor and no update filter.
+- **Decision:** Add `MeetingSource.WhisperAi` with its own client, mapper, checkpoint and credential (same storage: Credential Manager / `WHISPERAI_API_KEY`). Import only `completed` transcripts; pass the listing's `created` time through `WorkItem.SourceCreatedAt`; title from the audio file name; never store `audio_url` (may be pre-signed); fixed 1-day incremental look-back instead of a new setting. Two-way `Fireflies ? … : Granola` branches were replaced by `switch` expressions so a third source cannot silently fall into the Granola branch.
+- **Alternatives:** A generic "source plugin" abstraction (rejected: speculative for three sources); a `whisperAiLookbackDays` setting (deferred; add if users need it).
+- **Consequences:** Classification of WhisperAI transcripts relies on keyword and AI rules only. No DB migration.
+- **Evidence:** PIDA-019, FEAT-023, INT-006.
+- **Revisit when:** A fourth source is added, or WhisperAI adds metadata (title, participants).
+
 Record meaningful decisions; do not create an ADR for every small implementation choice.

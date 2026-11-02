@@ -41,6 +41,8 @@ public static class SettingKeys
     public const string GranolaConnection = "granola.connection";
     public const string FirefliesCheckpoint = "sync.checkpoint.fireflies";
     public const string FirefliesConnection = "fireflies.connection";
+    public const string WhisperAiCheckpoint = "sync.checkpoint.whisperai";
+    public const string WhisperAiConnection = "whisperai.connection";
 }
 
 /// <summary>
@@ -68,9 +70,15 @@ public static class SecretNames
 {
     public const string GranolaApiKey = "GranolaApiKey";
     public const string FirefliesApiKey = "FirefliesApiKey";
+    public const string WhisperAiApiKey = "WhisperAiApiKey";
     public const string AiApiKey = "AiApiKey";
 
-    public static string ForSource(MeetingSource source) => source == MeetingSource.Fireflies ? FirefliesApiKey : GranolaApiKey;
+    public static string ForSource(MeetingSource source) => source switch
+    {
+        MeetingSource.Fireflies => FirefliesApiKey,
+        MeetingSource.WhisperAi => WhisperAiApiKey,
+        _ => GranolaApiKey,
+    };
 }
 
 /// <summary>Base directory that relative export roots and log directories resolve against.</summary>

@@ -57,8 +57,8 @@ Seeded by the project audit of 2026-10-28. Every task is `Proposed` until the ow
 ### PIDA-004 — Scheduled sync for Fireflies-only setups
 - **Status:** Proposed
 - **Priority:** P1
-- **Outcome:** Automatic sync runs when either a Granola or a Fireflies key is configured.
-- **Scope:** Change the key check in `SynchronizationWorker.MaybeStartAsync` to accept either secret; update its summary comment.
+- **Outcome:** Automatic sync runs when a Granola, Fireflies or WhisperAI key is configured.
+- **Scope:** Change the key check in `SynchronizationWorker.MaybeStartAsync` to accept any source secret (WhisperAI added 2026-11-02, PIDA-019); update its summary comment.
 - **Out of scope:** Per-source schedules.
 - **Dependencies:** Q-004; PIDA-008 makes it testable.
 - **Likely components/files:** `src/GranolaPI.Worker/SynchronizationWorker.cs:64`.
@@ -239,6 +239,24 @@ Seeded by the project audit of 2026-10-28. Every task is `Proposed` until the ow
   - [ ] AC-1: Docs updated; if implemented, roots outside the allow-list are rejected (test).
 - **Estimate:** 1–4 h.
 - **Evidence/related docs:** SEC-002, SEC-005.
+
+### PIDA-019 — Import WhisperAI transcripts as a third meeting source
+- **Status:** Done (2026-11-02)
+- **Priority:** P1 (user request)
+- **Outcome:** With a WhisperAI API key configured the same way as the Granola and Fireflies keys (Settings card or `WHISPERAI_API_KEY`), completed WhisperAI transcripts are synced, classified and exported alongside the other sources.
+- **Scope:** `IWhisperAiApiClient` + client (raw `Authorization` header, `GET /transcript` with `before_id` paging, `GET /transcript/{id}`, `/sentences` fallback); mapper; `MeetingSource.WhisperAi`; sync discovery with its own checkpoint and a 1-day look-back; credential endpoints + test-connection; Markdown front matter; Settings card, badge and filter labels; `wai_` log redaction; docs.
+- **Out of scope:** Uploading audio or creating transcripts; translation; realtime; a configurable look-back setting; PIDA-004 (scheduled sync for non-Granola-only setups).
+- **Dependencies:** None. No DB migration (`Meetings.Source` is a string column).
+- **Likely components/files:** `src/GranolaPI.Application/WhisperAi/`, `src/GranolaPI.Infrastructure/WhisperAi/`, `SyncEngine.cs`, `MeetingProcessor.cs`, `CredentialService.cs`, `MarkdownRenderer.cs`, `SystemControllers.cs`, `frontend/src/pages/SettingsPage.tsx`.
+- **Acceptance criteria:**
+  - [x] AC-1: Key stored, masked, validated and restored on rejection like the Fireflies key (`WhisperAi_credentials_are_masked_and_tested_separately`, `pages.test.tsx`).
+  - [x] AC-2: Completed transcripts exported across pages with `source: whisperai`; queued/processing/error ones skipped (`Completed_transcripts_are_exported_across_pages…`).
+  - [x] AC-3: Completed transcripts are not refetched; a job that completes later is imported by the next incremental run (`Anonymous_speakers_are_not_people_and_complete_transcripts_are_not_refetched`).
+  - [x] AC-4: A WhisperAI outage does not block Granola/Fireflies (`All_three_sources_sync_together…`).
+  - [x] AC-5: Speaker labels stay anonymous; the `audio_url` is not written to files.
+- **Test plan:** `dotnet test` (unit + integration), `npm run typecheck`, `npx vitest run`, `npm run build`. All passed on 2026-11-02.
+- **Risks:** Utterance shape untyped in the spec (Q-012).
+- **Evidence/related docs:** FEAT-023, INT-006, ADR-010, `docs/WHISPERAI_API.md`.
 
 ### PIDA-018 — Versioning and safe upgrades
 - **Status:** Proposed

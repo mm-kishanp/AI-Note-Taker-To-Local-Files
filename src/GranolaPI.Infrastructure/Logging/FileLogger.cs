@@ -96,7 +96,7 @@ public sealed class FileLoggerProvider : ILoggerProvider
 
 public static partial class SecretRedactor
 {
-    [GeneratedRegex(@"(grn_[A-Za-z0-9_\-]{6,}|sk-ant-[A-Za-z0-9_\-]{6,}|Bearer\s+[A-Za-z0-9_\-\.]{10,})")]
+    [GeneratedRegex(@"(grn_[A-Za-z0-9_\-]{6,}|wai_[A-Za-z0-9_\-]{6,}|sk-ant-[A-Za-z0-9_\-]{6,}|Bearer\s+[A-Za-z0-9_\-\.]{10,})")]
     private static partial Regex Secrets();
 
     public static string Redact(string? text) => string.IsNullOrEmpty(text) ? text ?? "" : Secrets().Replace(text, "[REDACTED]");

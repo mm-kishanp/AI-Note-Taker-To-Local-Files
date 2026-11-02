@@ -87,9 +87,12 @@ public static partial class MarkdownRenderer
         }
         if (string.IsNullOrWhiteSpace(d.NotesMarkdown) && string.IsNullOrWhiteSpace(d.SummaryMarkdown))
         {
-            b.AppendLine(d.Source == MeetingSource.Fireflies
-                ? "_Fireflies has not produced AI notes for this call yet. They are added on a later sync._"
-                : "_Granola returned no notes or summary for this meeting._").AppendLine();
+            b.AppendLine(d.Source switch
+            {
+                MeetingSource.Fireflies => "_Fireflies has not produced AI notes for this call yet. They are added on a later sync._",
+                MeetingSource.WhisperAi => "_WhisperAI provides a transcript only; it produces no notes or summary. See the transcript._",
+                _ => "_Granola returned no notes or summary for this meeting._",
+            }).AppendLine();
         }
         if (d.IncludeAttachmentLinks && d.Attachments.Count > 0)
         {
@@ -116,6 +119,11 @@ public static partial class MarkdownRenderer
         {
             b.AppendLine("> Speaker names are as Fireflies.ai recorded them; anonymous labels such as \"Speaker 1\" are local");
             b.AppendLine("> to this transcript.").AppendLine();
+        }
+        else if (d.Source == MeetingSource.WhisperAi)
+        {
+            b.AppendLine("> WhisperAI does not identify speakers by name; labels such as \"Speaker A\" are local to this");
+            b.AppendLine("> transcript.").AppendLine();
         }
         else
         {
@@ -238,7 +246,7 @@ public static partial class MarkdownRenderer
     {
         var list = new List<(string, string)>
         {
-            ("source", d.Source == MeetingSource.Fireflies ? "fireflies" : "granola"),
+            ("source", d.Source switch { MeetingSource.Fireflies => "fireflies", MeetingSource.WhisperAi => "whisperai", _ => "granola" }),
             ("content_type", contentType),
             (IdKey(d.Source), Q(d.GranolaNoteId)),
             ("title", Q(d.Title)),
@@ -264,9 +272,19 @@ public static partial class MarkdownRenderer
     }
 
     /// <summary>The front-matter key that holds the source's meeting ID; used to recognise our own files.</summary>
-    public static string IdKey(MeetingSource source) => source == MeetingSource.Fireflies ? "fireflies_transcript_id" : "granola_note_id";
+    public static string IdKey(MeetingSource source) => source switch
+    {
+        MeetingSource.Fireflies => "fireflies_transcript_id",
+        MeetingSource.WhisperAi => "whisperai_transcript_id",
+        _ => "granola_note_id",
+    };
 
-    public static string SourceName(MeetingSource source) => source == MeetingSource.Fireflies ? "Fireflies" : "Granola";
+    public static string SourceName(MeetingSource source) => source switch
+    {
+        MeetingSource.Fireflies => "Fireflies",
+        MeetingSource.WhisperAi => "WhisperAI",
+        _ => "Granola",
+    };
 
     private static void AppendProjectLines(StringBuilder b, MeetingDocument d)
     {

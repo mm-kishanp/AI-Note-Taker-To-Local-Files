@@ -60,6 +60,7 @@ public enum MeetingSource
 {
     Granola = 0,
     Fireflies = 1,
+    WhisperAi = 2,
 }
 
 public enum SourceStatus

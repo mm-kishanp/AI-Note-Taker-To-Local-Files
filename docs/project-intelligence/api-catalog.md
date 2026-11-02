@@ -33,10 +33,12 @@ Last reviewed: 2026-10-28
 | GET / PUT | `/api/settings` | Read / update export, sync, classification, logging settings | Local/Token (+CSRF on PUT) | `UpdateSettingsRequest` validated by `SettingsValidator` | `SettingsDto` incl. resolved paths | `:72-89` |
 | GET / PUT / DELETE | `/api/settings/credentials/granola` | Masked status / save+validate / remove Granola key | Local/Token (+CSRF) | `SetCredentialRequest(ApiKey, Validate)` | `CredentialStatusDto` (masked) | `:115-122`, `CredentialService.cs` |
 | GET / PUT / DELETE | `/api/settings/credentials/fireflies` | Same for Fireflies | Local/Token (+CSRF) | same | same | `:126-133` |
+| GET / PUT / DELETE | `/api/settings/credentials/whisperai` | Same for WhisperAI (added 2026-11-02) | Local/Token (+CSRF) | same | same | `SystemControllers.cs` `SettingsController.WhisperAiStatus/SetWhisperAi/DeleteWhisperAi` |
 | GET / PUT / DELETE | `/api/settings/credentials/ai` | Same for the Anthropic key (no validation call) | Local/Token (+CSRF) | same | `AiStatusDto` | `:137-159` |
 | POST | `/api/granola/test-connection` | Test Granola key | Local/Token + CSRF | — | `ConnectionTestDto` | `:166-167` |
 | GET | `/api/granola/folders` | Granola folders visible to the key | Local/Token | — | `GranolaFolder[]` (UI hook exists but is unused) | `:170-171` |
 | POST | `/api/fireflies/test-connection` | Test Fireflies key | Local/Token + CSRF | — | `ConnectionTestDto` | `:178-179` |
+| POST | `/api/whisperai/test-connection` | Test WhisperAI key (added 2026-11-02) | Local/Token + CSRF | — | `ConnectionTestDto` | `SystemControllers.cs` `WhisperAiController` |
 | GET | `/api/exports/tree` | Export tree (≤5000 nodes) | Local/Token | `root` = root/notes/transcripts | `ExportTreeDto` | `:187-188`, `ExportBrowserService.cs:24-34` |
 | GET | `/api/exports/file` | Read one `.md` (≤20 MB) under a root | Local/Token | `root`, `path` (root-guarded) | `FileContentDto`; test `Export_browser_blocks_path_traversal` | `:190-191` |
 | POST | `/api/exports/open` | Open root/file in OS shell (desktop only) | Local/Token + CSRF | `root`, `path?` | 204; starts `explorer.exe`/`open`/`xdg-open` | `:193-198` |

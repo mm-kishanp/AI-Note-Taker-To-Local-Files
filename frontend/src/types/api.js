@@ -27,4 +27,6 @@ export const SYNC_MODES = ['Incremental', 'Full', 'RetryFailed', 'ReExport', 'Re
 export const SYNC_RUN_STATUSES = ['Running', 'Succeeded', 'PartiallySucceeded', 'Failed', 'Cancelled', 'Interrupted'];
 export const SYNC_TRIGGERS = ['Manual', 'Scheduled', 'Startup', 'Api'];
 // ---------- Meetings ----------
-export const MEETING_SOURCES = ['Granola', 'Fireflies'];
+export const MEETING_SOURCES = ['Granola', 'Fireflies', 'WhisperAi'];
+/** Display names; the API uses the enum names above. */
+export const MEETING_SOURCE_LABELS = { Granola: 'Granola', Fireflies: 'Fireflies', WhisperAi: 'WhisperAI' };

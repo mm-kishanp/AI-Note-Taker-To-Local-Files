@@ -6,6 +6,7 @@ using GranolaPI.Application.Fireflies;
 using GranolaPI.Application.Granola;
 using GranolaPI.Application.Interfaces;
 using GranolaPI.Application.Synchronization;
+using GranolaPI.Application.WhisperAi;
 using GranolaPI.Domain.Enums;
 using GranolaPI.Infrastructure.Security;
 using Microsoft.AspNetCore.Hosting;
@@ -176,11 +177,81 @@ public sealed class FakeFirefliesApi : IFirefliesApiClient
     }
 }
 
+/// <summary>Deterministic in-memory stand-in for the WhisperAI API (only used in tests).</summary>
+public sealed class FakeWhisperAiApi : IWhisperAiApiClient
+{
+    public ConcurrentDictionary<string, (WhisperAiTranscript Transcript, DateTimeOffset Created)> Transcripts { get; } = new();
+    public ErrorCategory? FailEverythingWith { get; set; }
+    public int PageSize { get; set; } = 2;
+    public int GetTranscriptCalls;
+    public int ListCalls;
+
+    // Recent, so incremental runs (which look back a day) still list these transcripts.
+    public static readonly DateTimeOffset T0 = DateTimeOffset.UtcNow.AddHours(-2);
+
+    public WhisperAiTranscript Add(string id, string audioName, string status = "completed", int minutesOffset = 0)
+    {
+        var t = new WhisperAiTranscript
+        {
+            Id = id,
+            Status = status,
+            AudioUrl = $"https://files.example.com/{audioName}.mp3?sig=private",
+            Text = "Welcome everyone. Let's review the requirements.",
+            Utterances =
+            [
+                new() { Speaker = "A", Text = "Welcome everyone.", Start = 0, End = 2000 },
+                new() { Speaker = "B", Text = "Let's review the requirements.", Start = 3000, End = 6000 },
+            ],
+        };
+        Transcripts[id] = (t, T0.AddMinutes(minutesOffset));
+        return t;
+    }
+
+    private void ThrowIfFailing()
+    {
+        if (FailEverythingWith is { } c) throw new WhisperAiApiException(c, c == ErrorCategory.Authentication ? 401 : 500, $"fake whisperai {c}");
+    }
+
+    public Task<GranolaConnectionResult> TestConnectionAsync(CancellationToken ct) =>
+        Task.FromResult(FailEverythingWith is { } c
+            ? new GranolaConnectionResult(false, c, "fake failure", "test")
+            : new GranolaConnectionResult(true, ErrorCategory.None, "ok", "test"));
+
+    public Task<WhisperAiTranscriptList> ListTranscriptsAsync(string? beforeId, int limit, CancellationToken ct)
+    {
+        Interlocked.Increment(ref ListCalls);
+        ThrowIfFailing();
+        var all = Transcripts.Values.OrderByDescending(x => x.Created).ThenByDescending(x => x.Transcript.Id).ToList();
+        var start = beforeId is null ? 0 : all.FindIndex(x => x.Transcript.Id == beforeId) + 1;
+        var page = all.Skip(start).Take(Math.Min(limit, PageSize)).ToList();
+        var more = start + page.Count < all.Count;
+        return Task.FromResult(new WhisperAiTranscriptList
+        {
+            PageDetails = new WhisperAiPageDetails { NextUrl = more ? "https://api.whisperai.com/v1/transcript?before_id=" + page[^1].Transcript.Id : null },
+            Transcripts = page.Select(x => new WhisperAiTranscriptListItem
+            {
+                Id = x.Transcript.Id,
+                Status = x.Transcript.Status,
+                Created = x.Created.UtcDateTime.ToString("yyyy-MM-ddTHH:mm:ss.ffffff"),
+                AudioUrl = x.Transcript.AudioUrl,
+            }).ToList(),
+        });
+    }
+
+    public Task<WhisperAiTranscript?> GetTranscriptAsync(string transcriptId, CancellationToken ct)
+    {
+        Interlocked.Increment(ref GetTranscriptCalls);
+        ThrowIfFailing();
+        return Task.FromResult(Transcripts.TryGetValue(transcriptId, out var x) ? x.Transcript : null);
+    }
+}
+
 public sealed class AppFactory : WebApplicationFactory<Program>
 {
     public string BaseDir { get; } = Path.Combine(Path.GetTempPath(), "gpi-it", Guid.NewGuid().ToString("N"));
     public FakeGranolaApi Granola { get; } = new();
     public FakeFirefliesApi Fireflies { get; } = new();
+    public FakeWhisperAiApi WhisperAi { get; } = new();
     public InMemoryCredentialStore Credentials { get; } = new();
     public string ExportRoot => Path.Combine(BaseDir, "GranolaProjectKnowledge");
 
@@ -205,6 +276,8 @@ public sealed class AppFactory : WebApplicationFactory<Program>
             services.AddSingleton<IGranolaApiClient>(Granola);
             services.RemoveAll<IFirefliesApiClient>();
             services.AddSingleton<IFirefliesApiClient>(Fireflies);
+            services.RemoveAll<IWhisperAiApiClient>();
+            services.AddSingleton<IWhisperAiApiClient>(WhisperAi);
             services.RemoveAll<ICredentialStore>();
             services.AddSingleton<ICredentialStore>(Credentials);
         });

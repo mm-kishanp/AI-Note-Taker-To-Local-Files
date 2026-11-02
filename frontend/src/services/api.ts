@@ -211,7 +211,8 @@ export async function request<T>(method: string, path: string, opts: RequestOpti
 }
 
 const enc = encodeURIComponent;
-const sourcePath = (source: MeetingSource) => (source === 'Fireflies' ? 'fireflies' : 'granola');
+const SOURCE_PATHS: Record<MeetingSource, string> = { Granola: 'granola', Fireflies: 'fireflies', WhisperAi: 'whisperai' };
+const sourcePath = (source: MeetingSource) => SOURCE_PATHS[source];
 
 /** Starts a background run; a 409 (already running) is surfaced as an ApiError whose detail is the server message. */
 async function startRun(path: string, body?: unknown): Promise<SyncStartResult> {

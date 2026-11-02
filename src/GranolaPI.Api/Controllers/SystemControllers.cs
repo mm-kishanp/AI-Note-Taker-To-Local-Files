@@ -23,7 +23,8 @@ public sealed class HealthController(AppDbContext db, ISecretProvider secrets, S
         var dbOk = await db.Database.CanConnectAsync(ct);
         return new HealthDto(dbOk ? "Healthy" : "Degraded",
             Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "1.0.0",
-            dbOk, secrets.Get(SecretNames.GranolaApiKey) is not null || secrets.Get(SecretNames.FirefliesApiKey) is not null,
+            dbOk, secrets.Get(SecretNames.GranolaApiKey) is not null || secrets.Get(SecretNames.FirefliesApiKey) is not null
+                || secrets.Get(SecretNames.WhisperAiApiKey) is not null,
             progress.IsRunning, DateTimeOffset.UtcNow);
     }
 }
@@ -132,6 +133,17 @@ public sealed class SettingsController(ISettingsService settings, IAppPaths path
     [HttpDelete("credentials/fireflies")]
     public Task<CredentialStatusDto> DeleteFireflies(CancellationToken ct) => credentials.DeleteAsync(MeetingSource.Fireflies, ct);
 
+    // ---- WhisperAI credentials (never returned in full) ----
+
+    [HttpGet("credentials/whisperai")]
+    public Task<CredentialStatusDto> WhisperAiStatus(CancellationToken ct) => credentials.StatusAsync(MeetingSource.WhisperAi, ct);
+
+    [HttpPut("credentials/whisperai")]
+    public Task<CredentialStatusDto> SetWhisperAi(SetCredentialRequest req, CancellationToken ct) => credentials.SetAsync(MeetingSource.WhisperAi, req, ct);
+
+    [HttpDelete("credentials/whisperai")]
+    public Task<CredentialStatusDto> DeleteWhisperAi(CancellationToken ct) => credentials.DeleteAsync(MeetingSource.WhisperAi, ct);
+
     // ---- Optional AI provider key ----
 
     [HttpGet("credentials/ai")]
@@ -177,6 +189,14 @@ public sealed class FirefliesController(CredentialService credentials) : Control
 {
     [HttpPost("test-connection")]
     public Task<ConnectionTestDto> Test(CancellationToken ct) => credentials.TestAsync(MeetingSource.Fireflies, ct);
+}
+
+[ApiController]
+[Route("api/whisperai")]
+public sealed class WhisperAiController(CredentialService credentials) : ControllerBase
+{
+    [HttpPost("test-connection")]
+    public Task<ConnectionTestDto> Test(CancellationToken ct) => credentials.TestAsync(MeetingSource.WhisperAi, ct);
 }
 
 [ApiController]

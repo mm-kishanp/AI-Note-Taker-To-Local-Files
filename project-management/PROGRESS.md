@@ -1,11 +1,20 @@
 # Project Progress
 
-- Last updated: 2026-10-28
-- Current goal: Project audit (PIDA onboarding) — first audit
-- Current task ID: — (audit; no backlog task in progress)
-- Overall status: Complete (audit). Implementation not started.
+- Last updated: 2026-11-02
+- Current goal: Add WhisperAI as a third meeting source (PIDA-019)
+- Current task ID: PIDA-019
+- Overall status: Done (uncommitted; awaiting the user's review and commit)
 
-## Completed
+## 2026-11-02 — PIDA-019 WhisperAI transcript import
+
+- **Completed:** The WhisperAI REST API was read from its published OpenAPI spec (`https://whisperai.com/whisperai-openapi.json`), because the docs page is a JS app. Then the integration was implemented: client, mapper, sync discovery, credentials, controllers, Markdown, frontend card, badge and filter, plus `wai_` log redaction. Docs: `docs/WHISPERAI_API.md`, FEAT-023, INT-006, ADR-010, R-010, Q-012; README updated.
+- **Files changed:** `src/GranolaPI.Application/WhisperAi/*` (new), `src/GranolaPI.Infrastructure/WhisperAi/*` (new), `Enums.cs`, `Interfaces.cs`, `CredentialService.cs`, `SyncEngine.cs`, `MeetingProcessor.cs`, `MarkdownRenderer.cs`, `CredentialStores.cs`, `DependencyInjection.cs`, `FileLogger.cs`, `SystemControllers.cs`; `frontend/src/{types/api,services/api,pages/SettingsPage,pages/MeetingsPage,pages/MeetingDetailPage,components/MeetingsTable,pages/pages.test}.{ts,tsx}` plus their `.js` twins (regenerated with `tsc` because they shadow the sources, RF-001); tests `WhisperAiTests.cs`, `WhisperAiSyncTests.cs`, `TestHost.cs`.
+- **Verification (all run 2026-11-02):** `dotnet build`: 0 warnings, 0 errors. `dotnet test`: 129 unit + 35 integration passed. `npm run typecheck`: passed. `npx vitest run`: 21 passed. `npm run build`: passed.
+- **Not verified:** no live call with a real `wai_` key (Q-012).
+- **Not touched:** the concurrent `setup.bat` work (committed separately as `d19e3e4` during this session).
+- **Next steps:** user reviews and commits; sync once with a real key to settle Q-012; consider PIDA-004 (scheduled sync for setups without a Granola key now also covers WhisperAI-only).
+
+## Completed (2026-10-28 audit)
 - Preflight: repository `C:\workspace\Discussions\Granola`, branch `master` tracking `origin/master`. At the start, many changes were staged and uncommitted. During the audit the user committed them (`1bb6c87`, `10d2095`), and the tree was then clean. The audit did not touch code.
 - Discovery of 233 tracked files in a single pass. Two parallel read-only sub-audits covered `frontend/` and `tools/node-cli/` + `scripts/`. The High-severity frontend claim was re-verified by hand.
 - Knowledge base written: every page in `docs/project-intelligence/`, 22 feature pages and 7 sub-project pages.

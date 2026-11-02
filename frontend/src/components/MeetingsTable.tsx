@@ -2,7 +2,7 @@ import { Anchor, Badge, Group, Table, Text, Tooltip, UnstyledButton } from '@man
 import { IconAlertCircle, IconArrowDown, IconArrowUp, IconSelector } from '@tabler/icons-react';
 import type { KeyboardEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import type { MeetingListItemDto, MeetingQuery } from '../types/api';
+import { MEETING_SOURCE_LABELS, type MeetingListItemDto, type MeetingQuery } from '../types/api';
 import { formatDateTime, formatRelative, truncateList } from '../utils/format';
 import { StatusBadge } from './StatusBadge';
 
@@ -77,9 +77,9 @@ export function MeetingsTable({ items, sort, desc, onSort, compact }: MeetingsTa
                     <Anchor component={Link} to={`/meetings/${m.id}`} onClick={(e) => e.stopPropagation()} size="sm" fw={500} lineClamp={2} tabIndex={-1}>
                       {m.title || '(untitled)'}
                     </Anchor>
-                    {m.source === 'Fireflies' && (
-                      <Badge size="xs" variant="light" color="violet" style={{ flexShrink: 0 }}>
-                        Fireflies
+                    {m.source !== 'Granola' && (
+                      <Badge size="xs" variant="light" color={m.source === 'Fireflies' ? 'violet' : 'teal'} style={{ flexShrink: 0 }}>
+                        {MEETING_SOURCE_LABELS[m.source]}
                       </Badge>
                     )}
                     {m.lastError && (

@@ -91,8 +91,10 @@ export interface ProblemDetails {
 }
 
 // ---------- Meetings ----------
-export const MEETING_SOURCES = ['Granola', 'Fireflies'] as const;
+export const MEETING_SOURCES = ['Granola', 'Fireflies', 'WhisperAi'] as const;
 export type MeetingSource = (typeof MEETING_SOURCES)[number];
+/** Display names; the API uses the enum names above. */
+export const MEETING_SOURCE_LABELS: Record<MeetingSource, string> = { Granola: 'Granola', Fireflies: 'Fireflies', WhisperAi: 'WhisperAI' };
 
 export interface MeetingListItemDto {
   id: string;

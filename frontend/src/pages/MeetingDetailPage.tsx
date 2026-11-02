@@ -417,7 +417,9 @@ export function MeetingDetailPage() {
         <Tabs defaultValue="files" keepMounted={false}>
           <Tabs.List>
             <Tabs.Tab value="files">Exported files ({currentExports.length})</Tabs.Tab>
-            <Tabs.Tab value="summary">{m.source === 'Fireflies' ? 'Fireflies AI notes' : 'Granola summary'}</Tabs.Tab>
+            {m.source !== 'WhisperAi' && (
+              <Tabs.Tab value="summary">{m.source === 'Fireflies' ? 'Fireflies AI notes' : 'Granola summary'}</Tabs.Tab>
+            )}
             {m.source === 'Granola' && <Tabs.Tab value="notes">Owner notes</Tabs.Tab>}
             <Tabs.Tab value="transcript">Transcript ({d.transcriptSegmentCount})</Tabs.Tab>
             <Tabs.Tab value="history">Sync history ({d.history.length})</Tabs.Tab>

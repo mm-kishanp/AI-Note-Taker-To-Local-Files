@@ -19,7 +19,7 @@ import { ApiError } from '../services/api';
 import {
   CLASSIFICATION_TIERS, CONFLICT_POLICIES, MULTI_PROJECT_MODES,
   type ClassificationSettings, type ClassificationTier, type ConnectionTestDto, type ExportSettings, type LoggingSettings,
-  type MeetingSource, type MigrateRootResultDto, type SettingsDto, type SyncSettings, type UpdateSettingsRequest,
+  MEETING_SOURCE_LABELS, type MeetingSource, type MigrateRootResultDto, type SettingsDto, type SyncSettings, type UpdateSettingsRequest,
 } from '../types/api';
 import { formatDateTime, formatRelative, humanize } from '../utils/format';
 import { notifyError, notifySuccess } from '../utils/notify';
@@ -115,6 +115,18 @@ const SOURCE_INFO: Record<MeetingSource, { title: string; where: ReactNode; plac
     placeholder: 'Fireflies API key',
     envVar: 'FIREFLIES_API_KEY',
   },
+  WhisperAi: {
+    title: 'WhisperAI connection',
+    where: (
+      <>
+        Optional. Every completed WhisperAI transcript on the account is imported (WhisperAI provides transcripts only, with
+        anonymous speaker labels). Create a key in the{' '}
+        <Anchor href="https://whisperai.com/developer" target="_blank" rel="noopener noreferrer">WhisperAI developer portal</Anchor>.
+      </>
+    ),
+    placeholder: 'wai_…',
+    envVar: 'WHISPERAI_API_KEY',
+  },
 };
 
 function SourceConnection({ source }: { source: MeetingSource }) {
@@ -183,7 +195,7 @@ function SourceConnection({ source }: { source: MeetingSource }) {
                     {
                       onSuccess: () => {
                         setKeyValue('');
-                        notifySuccess(`API key saved and verified with ${source}.`);
+                        notifySuccess(`API key saved and verified with ${MEETING_SOURCE_LABELS[source]}.`);
                       },
                     },
                   );
@@ -615,7 +627,7 @@ export function SettingsPage() {
   const settings = useSettings();
   return (
     <>
-      <PageHeader title="Settings" description={<>Configuration is stored in the local database. API docs: <Anchor href="https://docs.granola.ai/introduction" target="_blank" rel="noopener noreferrer">Granola</Anchor>, <Anchor href="https://docs.fireflies.ai/getting-started/quickstart" target="_blank" rel="noopener noreferrer">Fireflies</Anchor>.</>} docTitle="Settings" />
+      <PageHeader title="Settings" description={<>Configuration is stored in the local database. API docs: <Anchor href="https://docs.granola.ai/introduction" target="_blank" rel="noopener noreferrer">Granola</Anchor>, <Anchor href="https://docs.fireflies.ai/getting-started/quickstart" target="_blank" rel="noopener noreferrer">Fireflies</Anchor>, <Anchor href="https://whisperai.com/whisper-api/docs" target="_blank" rel="noopener noreferrer">WhisperAI</Anchor>.</>} docTitle="Settings" />
       <Tabs defaultValue="connection" keepMounted={false}>
         <Tabs.List mb="md">
           <Tabs.Tab value="connection">Connections</Tabs.Tab>
@@ -628,6 +640,7 @@ export function SettingsPage() {
           <Stack gap="lg">
             <SourceConnection source="Granola" />
             <SourceConnection source="Fireflies" />
+            <SourceConnection source="WhisperAi" />
           </Stack>
         </Tabs.Panel>
         {(['sync', 'export', 'classification', 'logging'] as const).map((tab) => (

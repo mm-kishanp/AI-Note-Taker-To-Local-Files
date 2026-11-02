@@ -29,6 +29,7 @@ Last reviewed: 2026-10-28
 | FEAT-020 | Local-first request protection | Only you (or a token holder) can use the API; other websites cannot drive it | Implemented | Not applicable | [FEAT-020](features/FEAT-020-request-protection.md) | `RequestProtectionMiddleware`; CSRF/CORS/no-store tests | Medium | Token and remote paths untested (SEC-001) |
 | FEAT-021 | Structured file logging with redaction | Diagnosable JSON logs with secrets removed and retention | Partial | Not applicable | [FEAT-021](features/FEAT-021-file-logging.md) | `FileLogger.cs`; no tests | High | RF-003, RF-007 |
 | FEAT-022 | Legacy Node CLI exporter | Earlier script-based export | Deprecated | Not applicable | [FEAT-022](features/FEAT-022-legacy-node-cli.md) | `tools/node-cli/`; `README.md:43` "kept for reference" | High | Decide fate (Q-003) |
+| FEAT-023 | WhisperAI transcript import | Completed WhisperAI transcripts are imported alongside Granola and Fireflies | Implemented | Not applicable | [FEAT-023](features/FEAT-023-whisperai-transcript-import.md) | `WhisperAiApiClient.cs`, `WhisperAiMapper.cs`, `SyncEngine.DiscoverWhisperAiAsync`; `WhisperAiSyncTests` (5), `WhisperAiTests` (19) | High | Utterance shape unverified live (Q-012); WhisperAI-only never auto-syncs (RF-004) |
 
 Allowed statuses: Implemented, Partial, Planned, Deprecated, Unknown.
 

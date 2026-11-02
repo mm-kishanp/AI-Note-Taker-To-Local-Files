@@ -5,6 +5,7 @@ using GranolaPI.Application.Fireflies;
 using GranolaPI.Application.Granola;
 using GranolaPI.Application.Interfaces;
 using GranolaPI.Application.Settings;
+using GranolaPI.Application.WhisperAi;
 using GranolaPI.Domain.Entities;
 using GranolaPI.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
@@ -28,6 +29,11 @@ public sealed class SyncEngine(
     ILogger<SyncEngine> logger)
 {
     private static readonly TimeSpan LeaseDuration = TimeSpan.FromMinutes(10);
+    /// <summary>
+    /// WhisperAI has no "updated since" filter and a transcript completes some time after its job is created,
+    /// so each incremental run re-lists transcripts created this long before the last run.
+    /// </summary>
+    private static readonly TimeSpan WhisperAiLookback = TimeSpan.FromDays(1);
     private readonly string _owner = $"{Environment.MachineName}:{Environment.ProcessId}:{Guid.NewGuid():N}";
 
     public async Task<SyncRun> RunAsync(SyncRequest request, CancellationToken ct)
@@ -70,8 +76,11 @@ public sealed class SyncEngine(
                 case SyncMode.Full:
                     var secrets = scope.ServiceProvider.GetRequiredService<ISecretProvider>();
                     var useFireflies = secrets.Get(SecretNames.FirefliesApiKey) is not null;
+                    var useWhisperAi = secrets.Get(SecretNames.WhisperAiApiKey) is not null;
                     // Granola stays the default source: with no key at all its "not configured" error is reported.
-                    var useGranola = secrets.Get(SecretNames.GranolaApiKey) is not null || !useFireflies;
+                    var useGranola = secrets.Get(SecretNames.GranolaApiKey) is not null || !(useFireflies || useWhisperAi);
+                    // With several sources, one failing to list is reported and the others still sync.
+                    var multiSource = new[] { useGranola, useFireflies, useWhisperAi }.Count(x => x) > 1;
                     var filters = new List<string>();
 
                     if (useGranola)
@@ -84,7 +93,7 @@ public sealed class SyncEngine(
                             items.AddRange(await DiscoverAsync(api, db, query, request.Mode == SyncMode.Full, counters, run, ct));
                             listedSources.Add(MeetingSource.Granola);
                         }
-                        catch (GranolaApiException ex) when (useFireflies)
+                        catch (GranolaApiException ex) when (multiSource)
                         {
                             sourceErrors.Add($"Granola: {ex.Category}: {ex.Message}");
                         }
@@ -102,9 +111,27 @@ public sealed class SyncEngine(
                             items.AddRange(await DiscoverFirefliesAsync(fireflies, db, from, counters, ct));
                             listedSources.Add(MeetingSource.Fireflies);
                         }
-                        catch (GranolaApiException ex) when (useGranola)
+                        catch (GranolaApiException ex) when (multiSource)
                         {
                             sourceErrors.Add($"Fireflies: {ex.Category}: {ex.Message}");
+                        }
+                    }
+                    if (useWhisperAi)
+                    {
+                        var waCheckpoint = await settingsService.GetSectionAsync<SyncCheckpoint>(SettingKeys.WhisperAiCheckpoint, ct);
+                        var from = request.Mode == SyncMode.Incremental && waCheckpoint.LastSuccessfulIncrementalStart is { } last
+                            ? last - WhisperAiLookback
+                            : settings.Sync.InitialImportFrom;
+                        filters.Add(from is { } f ? $"whisperai from {f:O}" : "whisperai all");
+                        try
+                        {
+                            var whisperAi = scope.ServiceProvider.GetRequiredService<IWhisperAiApiClient>();
+                            items.AddRange(await DiscoverWhisperAiAsync(whisperAi, db, from, counters, ct));
+                            listedSources.Add(MeetingSource.WhisperAi);
+                        }
+                        catch (GranolaApiException ex) when (multiSource)
+                        {
+                            sourceErrors.Add($"WhisperAI: {ex.Category}: {ex.Message}");
                         }
                     }
                     if (listedSources.Count == 0 && sourceErrors.Count > 0)
@@ -212,6 +239,7 @@ public sealed class SyncEngine(
                 };
                 if (listedSources.Contains(MeetingSource.Granola)) await settingsService.SaveSectionAsync(SettingKeys.Checkpoint, checkpoint, ct);
                 if (listedSources.Contains(MeetingSource.Fireflies)) await settingsService.SaveSectionAsync(SettingKeys.FirefliesCheckpoint, checkpoint, ct);
+                if (listedSources.Contains(MeetingSource.WhisperAi)) await settingsService.SaveSectionAsync(SettingKeys.WhisperAiCheckpoint, checkpoint, ct);
             }
         }
         catch (OperationCanceledException)
@@ -341,6 +369,55 @@ public sealed class SyncEngine(
                 items.Add(new WorkItem(call.Id, Fetch: true, Source: MeetingSource.Fireflies));
             }
             if (page.Count < pageSize) break;
+        }
+        return items;
+    }
+
+    /// <summary>
+    /// Lists WhisperAI transcripts (newest first) back to <paramref name="from"/>. Only completed transcripts are
+    /// imported; queued or processing ones are picked up by a later run, and failed jobs have no content. A
+    /// completed transcript does not change, so a known one is fetched again only when its export is pending.
+    /// </summary>
+    private async Task<List<WorkItem>> DiscoverWhisperAiAsync(IWhisperAiApiClient api, IAppDbContext db, DateTimeOffset? from, SyncCounters counters, CancellationToken ct)
+    {
+        const int pageSize = 100;
+        var items = new List<WorkItem>();
+        var seen = new HashSet<string>();
+        string? beforeId = null;
+        while (true)
+        {
+            var page = await api.ListTranscriptsAsync(beforeId, pageSize, ct);
+            var transcripts = page.Transcripts ?? [];
+            var ids = transcripts.Select(t => t.Id).ToList();
+            var known = await db.Meetings.AsNoTracking()
+                .Where(m => m.Source == MeetingSource.WhisperAi && ids.Contains(m.GranolaNoteId))
+                .Select(m => new { m.GranolaNoteId, m.ExportPending, m.TranscriptStatus, m.SourceStatus })
+                .ToDictionaryAsync(m => m.GranolaNoteId, ct);
+
+            var reachedFrom = false;
+            foreach (var t in transcripts)
+            {
+                if (from is { } f && t.CreatedAt is { } created && created < f)
+                {
+                    reachedFrom = true;
+                    break;
+                }
+                if (string.IsNullOrEmpty(t.Id) || !seen.Add(t.Id)) continue;
+                if (!string.Equals(t.Status, WhisperAiStatus.Completed, StringComparison.OrdinalIgnoreCase)) continue;
+                counters.NotesDiscovered++;
+                progress.Discovered();
+                if (known.TryGetValue(t.Id, out var k)
+                    && !k.ExportPending
+                    && k.TranscriptStatus is ContentStatus.Available or ContentStatus.Empty
+                    && k.SourceStatus == SourceStatus.Active)
+                {
+                    counters.MeetingsSkipped++;
+                    continue;
+                }
+                items.Add(new WorkItem(t.Id, Fetch: true, Source: MeetingSource.WhisperAi, SourceCreatedAt: t.CreatedAt));
+            }
+            if (reachedFrom || !page.HasMore || transcripts.Count == 0) break;
+            beforeId = transcripts[^1].Id;
         }
         return items;
     }

@@ -1,6 +1,6 @@
 # Granola Project Intelligence Sync
 
-A local-first app that pulls your meetings from [Granola](https://docs.granola.ai/introduction) and, optionally, the calls recorded by [Fireflies.ai](https://docs.fireflies.ai/getting-started/quickstart). It works out which project each one belongs to, and saves the notes and the transcript as separate Markdown files in a folder structure you control.
+A local-first app that pulls your meetings from [Granola](https://docs.granola.ai/introduction) and, optionally, the calls recorded by [Fireflies.ai](https://docs.fireflies.ai/getting-started/quickstart) and the transcripts in your [WhisperAI](https://whisperai.com/whisper-api/docs) API account. It works out which project each one belongs to, and saves the notes and the transcript as separate Markdown files in a folder structure you control.
 
 The output is a plain folder of Markdown. It stays useful when the app isn't running: open it in VS Code, commit it to Git, or point Claude Code, GitHub Copilot or another coding agent at a project folder.
 
@@ -21,7 +21,7 @@ GranolaProjectKnowledge/
 
 ## What it does
 
-- **Syncs** every meeting your Granola key can read and every call your Fireflies key can read (AI notes plus transcript; see [docs/FIREFLIES_API.md](docs/FIREFLIES_API.md)): a full historical import first, then incremental runs. You can sync manually or on a schedule, retry failed meetings, re-export, and reconcile the files on disk.
+- **Syncs** every meeting your Granola key can read and every call your Fireflies key can read (AI notes plus transcript; see [docs/FIREFLIES_API.md](docs/FIREFLIES_API.md)) and every completed transcript your WhisperAI key can read (transcript only; see [docs/WHISPERAI_API.md](docs/WHISPERAI_API.md)): a full historical import first, then incremental runs. You can sync manually or on a schedule, retry failed meetings, re-export, and reconcile the files on disk.
 - **Classifies** each meeting with deterministic rules you configure. Rules can match participant emails or domains, attendee names, speakers Granola identified in the transcript, client mappings, Granola folders, and title or summary keywords. Every assignment records the rule and evidence behind it. AI-assisted classification is optional and off by default.
 - **Never loses a meeting.** Meetings it can't place confidently go to `Unassigned/` and the review screen. A manual assignment always wins over the rules.
 - **Writes notes and transcripts separately.** Each type has its own root folder and directory templates, and the defaults keep them in the same tree. Writes are atomic, filenames are stable, and collisions are resolved safely.
@@ -51,6 +51,7 @@ For details see [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 - Node.js 22 or later (only to build or develop the frontend)
 - A Granola API key: in the Granola desktop app, go to **Settings → Connectors → API keys → Create new key** and choose the *Personal notes* scope. On Enterprise plans an admin must enable API access first.
 - Optional: a Fireflies API key, from **app.fireflies.ai → Integrations → Fireflies API**.
+- Optional: a WhisperAI API key (`wai_…`), from the [WhisperAI developer portal](https://whisperai.com/developer).
 
 ## Quick start (Windows desktop)
 
@@ -68,7 +69,7 @@ dotnet run --project src/GranolaPI.Api      # http://127.0.0.1:5080
 
 Then, in the app:
 
-1. Go to **Settings → Connections**, paste the Granola API key, then click **Save & verify**. The key is validated and saved to Windows Credential Manager. To import Fireflies calls too, add the Fireflies key in the card below it.
+1. Go to **Settings → Connections**, paste the Granola API key, then click **Save & verify**. The key is validated and saved to Windows Credential Manager. To import Fireflies calls or WhisperAI transcripts too, add that key in its card below.
 2. Under **Settings → Export**, choose the root folder. Optionally choose separate folders for notes and transcripts.
 3. Create **Projects** and add rules. To find the right names, run a first sync and look at the **Unassigned** page: it lists each meeting's attendees and the speakers Granola identified.
 4. Click **Sync now**. The first run is a full historical import. Set **Initial import from** first if you only want recent meetings.
@@ -93,7 +94,7 @@ The REST contract is documented by OpenAPI at `/openapi/v1.json` in Development,
 | Scenario | How |
 |---|---|
 | Personal Windows machine | `dotnet publish src/GranolaPI.Api -c Release -o publish` after building the frontend, then run `publish/GranolaPI.Api.exe` (for example, from Task Scheduler at log-on). It listens on `127.0.0.1:5080` only. |
-| Server / NAS | `docker compose up -d` with `GRANOLA_API_KEY` (and optionally `FIREFLIES_API_KEY`) and `GPI_API_TOKEN` in a `.env` file. Remote callers must send the API token; put HTTPS in front. See [docs/INSTALLATION.md](docs/INSTALLATION.md). |
+| Server / NAS | `docker compose up -d` with `GRANOLA_API_KEY` (and optionally `FIREFLIES_API_KEY`, `WHISPERAI_API_KEY`) and `GPI_API_TOKEN` in a `.env` file. Remote callers must send the API token; put HTTPS in front. See [docs/INSTALLATION.md](docs/INSTALLATION.md). |
 
 ## Configuration
 
@@ -121,7 +122,7 @@ Ambiguous results go to review by default. Anonymous labels such as "Speaker A" 
 |---|---|---|
 | Meeting knowledge (Markdown) | Export root(s) | Yes. Copy, back up or put under Git. Files are self-describing (front matter has the Granola note ID). |
 | Operational state: meetings, mappings, export records, sync history, settings | `data/granola-pi.db` (SQLite) | Yes, with the app. Copying only the Markdown does **not** carry this over. |
-| Granola / Fireflies / AI API keys | Windows Credential Manager, or environment variables | No. Re-enter on a new machine. |
+| Granola / Fireflies / WhisperAI / AI API keys | Windows Credential Manager, or environment variables | No. Re-enter on a new machine. |
 | Logs | `data/logs` (JSON lines; secrets redacted) | — |
 
 Backup and recovery are covered in [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md#backup-and-recovery).
@@ -129,8 +130,8 @@ Backup and recovery are covered in [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTIN
 ## Testing
 
 ```powershell
-dotnet test                         # 110 unit + 28 integration tests, no credentials needed
-cd frontend; npm test               # 20 Vitest + React Testing Library tests (fetch mocked)
+dotnet test                         # 129 unit + 35 integration tests, no credentials needed
+cd frontend; npm test               # 21 Vitest + React Testing Library tests (fetch mocked)
 
 # Optional, against a running app:
 cd frontend; npx playwright install chromium; npm run e2e
@@ -149,6 +150,7 @@ CI (`.github/workflows/ci.yml`) restores, checks formatting, builds, runs all ba
 - [Configuration](docs/CONFIGURATION.md)
 - [Granola API](docs/GRANOLA_API.md)
 - [Fireflies integration](docs/FIREFLIES_API.md)
+- [WhisperAI integration](docs/WHISPERAI_API.md)
 - [Classification](docs/CLASSIFICATION.md)
 - [Markdown format](docs/MARKDOWN_FORMAT.md)
 - [Security](docs/SECURITY.md)

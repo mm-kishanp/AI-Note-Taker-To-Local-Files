@@ -5,12 +5,14 @@ using GranolaPI.Application.Fireflies;
 using GranolaPI.Application.Granola;
 using GranolaPI.Application.Interfaces;
 using GranolaPI.Application.Synchronization;
+using GranolaPI.Application.WhisperAi;
 using GranolaPI.Infrastructure.Ai;
 using GranolaPI.Infrastructure.Fireflies;
 using GranolaPI.Infrastructure.Granola;
 using GranolaPI.Infrastructure.Logging;
 using GranolaPI.Infrastructure.Persistence;
 using GranolaPI.Infrastructure.Security;
+using GranolaPI.Infrastructure.WhisperAi;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -41,6 +43,12 @@ public static class DependencyInjection
         });
         services.AddSingleton<FirefliesRequestThrottle>();
         services.AddHttpClient<IFirefliesApiClient, FirefliesApiClient>(c =>
+        {
+            c.Timeout = TimeSpan.FromSeconds(100);
+            c.DefaultRequestHeaders.UserAgent.ParseAdd("GranolaProjectIntelligenceSync/1.0");
+        });
+        services.AddSingleton<WhisperAiRequestThrottle>();
+        services.AddHttpClient<IWhisperAiApiClient, WhisperAiApiClient>(c =>
         {
             c.Timeout = TimeSpan.FromSeconds(100);
             c.DefaultRequestHeaders.UserAgent.ParseAdd("GranolaProjectIntelligenceSync/1.0");

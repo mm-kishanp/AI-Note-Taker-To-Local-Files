@@ -189,7 +189,8 @@ export async function request(method, path, opts = {}) {
     }
 }
 const enc = encodeURIComponent;
-const sourcePath = (source) => (source === 'Fireflies' ? 'fireflies' : 'granola');
+const SOURCE_PATHS = { Granola: 'granola', Fireflies: 'fireflies', WhisperAi: 'whisperai' };
+const sourcePath = (source) => SOURCE_PATHS[source];
 /** Starts a background run; a 409 (already running) is surfaced as an ApiError whose detail is the server message. */
 async function startRun(path, body) {
     return request('POST', path, { body });

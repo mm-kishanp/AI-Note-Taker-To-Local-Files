@@ -140,6 +140,7 @@ public sealed class SecretProvider(ICredentialStore store, IConfiguration config
     {
         [SecretNames.GranolaApiKey] = ["GRANOLA_API_KEY", "Secrets:GranolaApiKey"],
         [SecretNames.FirefliesApiKey] = ["FIREFLIES_API_KEY", "Secrets:FirefliesApiKey"],
+        [SecretNames.WhisperAiApiKey] = ["WHISPERAI_API_KEY", "Secrets:WhisperAiApiKey"],
         [SecretNames.AiApiKey] = ["ANTHROPIC_API_KEY", "Secrets:AiApiKey"],
     };
 
