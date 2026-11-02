@@ -52,10 +52,13 @@ if ($busy) {
 
 Remove-Autostart
 $psArgs = "-NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File `"$launcher`" -Port $Port"
+# "conhost --headless" gives the app a console with no window. Without it, Windows 11 opens the console
+# in Windows Terminal (which ignores -WindowStyle Hidden), and closing that window kills the app.
+$headlessArgs = "--headless powershell.exe $psArgs"
 $user = "$env:USERDOMAIN\$env:USERNAME"
 try {
     $task = New-ScheduledTask `
-        -Action (New-ScheduledTaskAction -Execute 'powershell.exe' -Argument $psArgs -WorkingDirectory $publish) `
+        -Action (New-ScheduledTaskAction -Execute 'conhost.exe' -Argument $headlessArgs -WorkingDirectory $publish) `
         -Trigger (New-ScheduledTaskTrigger -AtLogOn -User $user) `
         -Principal (New-ScheduledTaskPrincipal -UserId $user -LogonType Interactive -RunLevel Limited) `
         -Settings (New-ScheduledTaskSettingsSet -ExecutionTimeLimit ([TimeSpan]::Zero) -RestartCount 999 `
@@ -69,8 +72,8 @@ try {
 catch {
     # Some managed machines block task registration without admin rights: fall back to the Startup folder.
     Write-Warning "Could not register a scheduled task ($($_.Exception.Message)). Using the Startup folder instead (no auto-restart after a crash)."
-    Set-Content -Path $startupCmd -Encoding ascii -Value "@start `"`" /min powershell.exe $psArgs"
-    Start-Process powershell.exe -ArgumentList $psArgs -WindowStyle Hidden
+    Set-Content -Path $startupCmd -Encoding ascii -Value "@start `"`" conhost.exe $headlessArgs"
+    Start-Process conhost.exe -ArgumentList $headlessArgs -WindowStyle Hidden
     Write-Host "  added Startup folder entry: $startupCmd"
 }
 
