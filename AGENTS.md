@@ -11,7 +11,7 @@ Classify material findings as:
 - **Inferred**: reasoned interpretation with rationale and confidence.
 - **Unknown**: insufficient or conflicting evidence.
 
-Do not claim a feature exists because a README, ticket, TODO, or mockup describes it. Verify implementation and tests. Distinguish Implemented, Partial, Planned, Deprecated, and Unknown.
+Do not claim a feature exists because a README, ticket, TODO, or mockup describes it. Verify implementation and tests. Distinguish Implemented, Partial, Planned, Deprecated, and Unknown. 
 
 ## Before work
 1. Confirm repository root and inspect Git status. Preserve uncommitted changes.
