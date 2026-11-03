@@ -128,7 +128,7 @@ To regenerate everything regardless of edits, set `conflictPolicy` to `AlwaysOve
 ## Project files
 
 - `README.md` is created once per project and never overwritten.
-- `PROJECT_CONTEXT.md`: only the region between `<!-- granola-pi:generated:start -->` and `<!-- granola-pi:generated:end -->` is rewritten, and only when it changed. Write your own notes above or below it. If you delete the markers, the file is left alone. The generated region lists:
+- `PROJECT_CONTEXT.md`: only the region between `<!-- chroniq:generated:start -->` and `<!-- chroniq:generated:end -->` is rewritten, and only when it changed. Write your own notes above or below it. If you delete the markers, the file is left alone. The generated region lists:
   - the project's meetings, with links to their notes and transcript;
   - recurring participants;
   - lines copied verbatim from Granola summary sections titled action items / next steps, decisions, and open questions, labelled as discussion records rather than confirmed decisions.

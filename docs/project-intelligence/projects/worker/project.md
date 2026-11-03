@@ -1,9 +1,9 @@
-# GranolaPI.Worker (scheduled sync)
+# Chroniq.Worker (scheduled sync)
 
 Last reviewed: 2026-10-28
 
 - Type: Worker (library hosted inside the API process)
-- Location: `src/GranolaPI.Worker/`
+- Location: `src/Chroniq.Worker/`
 - Status: Active
 - Confidence: High
 - Part of: [project.md](../../project.md)
@@ -40,7 +40,7 @@ A `BackgroundService` that starts incremental syncs on a schedule and marks inte
 
 | Depends on | Kind | Why | Evidence |
 | --- | --- | --- | --- |
-| GranolaPI.Application | sub-project | `SyncCoordinator`, `SyncHistoryService`, settings, secrets | csproj |
+| Chroniq.Application | sub-project | `SyncCoordinator`, `SyncHistoryService`, settings, secrets | csproj |
 
 ## Interfaces
 

@@ -4,7 +4,7 @@ Meeting notes and transcripts are often confidential. The app is designed to run
 
 ## Credentials
 
-- **Windows desktop:** the Granola key (and the optional Anthropic key) is stored in **Windows Credential Manager** as generic credentials (`GranolaProjectIntelligence:GranolaApiKey`), encrypted by the OS per user. You can see or remove it under Control Panel → Credential Manager → Windows Credentials.
+- **Windows desktop:** the Granola key (and the optional Anthropic key) is stored in **Windows Credential Manager** as generic credentials (`Chroniq:GranolaApiKey`), encrypted by the OS per user. You can see or remove it under Control Panel → Credential Manager → Windows Credentials.
 - **Servers and containers:** the app cannot write secrets. Supply them as `GRANOLA_API_KEY` / `FIREFLIES_API_KEY` / `ANTHROPIC_API_KEY` environment variables, or through a secrets manager mapped to configuration.
 - Keys are never stored in the database or in settings JSON, never sent to the browser (the UI shows only a masked form such as `grn_••••••••abcd`), and never logged: the file logger redacts `grn_…`, `sk-ant-…` and `Bearer …` patterns.
 - A new key is validated against Granola before it is kept. If Granola rejects it with 401, the previous key is restored.
@@ -16,7 +16,7 @@ Meeting notes and transcripts are often confidential. The app is designed to run
 
 - By default the app listens only on `127.0.0.1:5080`. Requests from other machines are refused unless `Security:ApiToken` is set (or `Security:AllowRemoteWithoutToken`, which is not recommended).
 - With `Security:ApiToken` set, every `/api` call except `/api/health` needs `Authorization: Bearer <token>`. The token is compared in constant time. Use HTTPS (a reverse proxy) for anything beyond localhost.
-- **CSRF:** every state-changing `/api` request must carry `X-GPI-Request: 1`. A malicious website cannot add that header without a CORS preflight, and CORS only allows the configured origins (by default, the local Vite dev server).
+- **CSRF:** every state-changing `/api` request must carry `X-Chroniq-Request: 1`. A malicious website cannot add that header without a CORS preflight, and CORS only allows the configured origins (by default, the local Vite dev server).
 - `AllowedHosts` is restricted to `localhost` and `127.0.0.1`, which also blocks DNS-rebinding attacks.
 - Errors use RFC 7807 problem details. Production responses carry no stack traces, and every response includes a correlation ID for log lookup.
 

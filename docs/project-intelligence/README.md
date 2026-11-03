@@ -2,13 +2,13 @@
 
 Last reviewed: 2026-10-28
 
-Evidence-based knowledge base for **Granola Project Intelligence Sync**, maintained by PIDA (see `CLAUDE.md`). Start with [project.md](project.md).
+Evidence-based knowledge base for **CHRONIQ**, maintained by PIDA (see `CLAUDE.md`). Start with [project.md](project.md).
 
 ## Scope of the current audit (2026-10-28)
 
 - **Inspected:** all backend source (`src/`), tests, CI, Docker, configuration, README and `docs/SECURITY.md`; `frontend/`, `tools/node-cli/` and `scripts/` through read-only sub-audits.
 - **Sampled:** frontend code quality (6 files plus repo-wide greps); `docs/*.md` other than SECURITY used as leads.
-- **Excluded:** `GranolaProjectKnowledge/` and `data/` (user meeting content and database), secrets files, `node_modules/`, build output, older generated migrations.
+- **Excluded:** `ChroniqKnowledge/` and `data/` (user meeting content and database), secrets files, `node_modules/`, build output, older generated migrations.
 - **Not run:** builds, tests, linters, scanners. Commands are labelled Documented.
 
 ## Rules
@@ -17,7 +17,7 @@ Evidence-based knowledge base for **Granola Project Intelligence Sync**, maintai
 - Label material findings `Verified`, `Inferred`, or `Unknown`.
 - Include source paths and symbols/lines where practical.
 - Record scan scope and exclusions.
-- Do not store credentials, tokens, production data, or other secrets. Never copy meeting content from `GranolaProjectKnowledge/` or `data/` into these pages.
+- Do not store credentials, tokens, production data, or other secrets. Never copy meeting content from `ChroniqKnowledge/` or `data/` into these pages.
 - Link to existing authoritative documentation rather than duplicating it.
 - Refresh relevant pages after code, schema, dependency, API, or deployment changes. `python scripts/doc-freshness.py` lists pages with stale or placeholder review dates and cited paths that no longer exist.
 - Blank templates for every page live in the templates folder of the `project-audit` skill (source: `.agents/skills/project-audit/templates/`).

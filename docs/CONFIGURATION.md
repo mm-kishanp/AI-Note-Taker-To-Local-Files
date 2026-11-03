@@ -8,7 +8,7 @@ Secrets (API keys) are **not** settings. See [SECURITY.md](SECURITY.md).
 
 | Setting | Default | Meaning |
 |---|---|---|
-| `rootDirectory` | `./GranolaProjectKnowledge` | Main export root. Can be absolute or relative to the app base directory. |
+| `rootDirectory` | `./ChroniqKnowledge` | Main export root. Can be absolute or relative to the app base directory. |
 | `notesRootDirectory` | *(root)* | Optional separate root for notes |
 | `transcriptsRootDirectory` | *(root)* | Optional separate root for transcripts |
 | `projectDirectoryTemplate` | `Projects/{ProjectSlug}` | Folder for a project. Must contain `{ProjectSlug}` or `{ProjectName}`. |
@@ -101,7 +101,7 @@ Manage these in the UI, or import and export them as JSON (Projects → Import /
 | `Urls` | `http://127.0.0.1:5080` | Listening address (loopback only by default) |
 | `App:BaseDirectory` | content root (repo root in Development) | Base for relative paths |
 | `App:DataDirectory` | `data` | Database and default log folder |
-| `ConnectionStrings:Default` | `Data Source=<data>/granola-pi.db` | Database connection |
+| `ConnectionStrings:Default` | `Data Source=<data>/chroniq.db` | Database connection |
 | `Worker:Enabled` | `true` | Host the scheduled worker in this process |
 | `Security:UseWindowsCredentialManager` | `true` | Store keys in Windows Credential Manager |
 | `Security:ApiToken` | *(none)* | When set, every `/api` call except `/api/health` must send `Authorization: Bearer <token>` |

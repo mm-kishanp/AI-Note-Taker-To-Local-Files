@@ -1,9 +1,9 @@
-# GranolaPI.Api (API host)
+# Chroniq.Api (API host)
 
 Last reviewed: 2026-10-28
 
 - Type: API (also hosts the worker and the SPA)
-- Location: `src/GranolaPI.Api/`
+- Location: `src/Chroniq.Api/`
 - Status: Active
 - Confidence: High
 - Part of: [project.md](../../project.md)
@@ -34,19 +34,19 @@ The single deployable process. It wires everything together, exposes the REST AP
 | Item | Value | Evidence |
 | --- | --- | --- |
 | Entry point | `Program.cs` (top-level statements; `public partial class Program` for tests) | file |
-| Runtime / framework | ASP.NET Core, `net10.0`; Microsoft.AspNetCore.OpenApi 10.0.9, Swashbuckle.AspNetCore.SwaggerUI 10.3.1 | `GranolaPI.Api.csproj` |
-| Build | `dotnet build GranolaProjectIntelligence.sln` (Documented) | `ci.yml` |
-| Run locally | `dotnet run --project src/GranolaPI.Api` → `http://127.0.0.1:5080` (Documented) | `launchSettings.json` |
-| Tests | `tests/GranolaPI.IntegrationTests` (30 tests via `WebApplicationFactory<Program>`) | `TestHost.cs` |
+| Runtime / framework | ASP.NET Core, `net10.0`; Microsoft.AspNetCore.OpenApi 10.0.9, Swashbuckle.AspNetCore.SwaggerUI 10.3.1 | `Chroniq.Api.csproj` |
+| Build | `dotnet build Chroniq.sln` (Documented) | `ci.yml` |
+| Run locally | `dotnet run --project src/Chroniq.Api` → `http://127.0.0.1:5080` (Documented) | `launchSettings.json` |
+| Tests | `tests/Chroniq.IntegrationTests` (30 tests via `WebApplicationFactory<Program>`) | `TestHost.cs` |
 | Deployed as | `dotnet publish` exe (desktop) or Docker image (port 8080) | [deployment.md](../../deployment.md) |
 
 ## Dependencies
 
 | Depends on | Kind | Why | Evidence |
 | --- | --- | --- | --- |
-| GranolaPI.Application | sub-project | Use cases, DTOs | csproj |
-| GranolaPI.Infrastructure | sub-project | Persistence, clients, logging | csproj |
-| GranolaPI.Worker | sub-project | Scheduled sync | csproj |
+| Chroniq.Application | sub-project | Use cases, DTOs | csproj |
+| Chroniq.Infrastructure | sub-project | Persistence, clients, logging | csproj |
+| Chroniq.Worker | sub-project | Scheduled sync | csproj |
 | SQLite file | data store | State | `Program.cs:19` |
 
 ## Interfaces

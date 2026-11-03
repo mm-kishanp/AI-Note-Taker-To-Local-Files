@@ -1,22 +1,22 @@
 # Server/NAS deployment. Secrets come from the environment (.env file next to this one, never committed).
 #   GRANOLA_API_KEY=grn_...
-#   GPI_API_TOKEN=<long random string>   # required: the API refuses remote callers without it
+#   CHRONIQ_API_TOKEN=<long random string>   # required: the API refuses remote callers without it
 #   ANTHROPIC_API_KEY=...                 # optional, only if AI-assisted classification is enabled
 services:
-  granola-pi:
+  chroniq:
     build: .
     ports:
       - "127.0.0.1:8080:8080"   # bind to localhost; put a TLS reverse proxy in front for remote access
     environment:
       GRANOLA_API_KEY: ${GRANOLA_API_KEY:?set GRANOLA_API_KEY in .env}
       FIREFLIES_API_KEY: ${FIREFLIES_API_KEY:-}
-      Security__ApiToken: ${GPI_API_TOKEN:?set GPI_API_TOKEN in .env}
+      Security__ApiToken: ${CHRONIQ_API_TOKEN:-${GPI_API_TOKEN:?set CHRONIQ_API_TOKEN in .env}}   # GPI_API_TOKEN: pre-rename name
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
       AllowedHosts: "*"
     volumes:
-      - ./GranolaProjectKnowledge:/data/GranolaProjectKnowledge   # the Markdown repository
+      - ./ChroniqKnowledge:/data/ChroniqKnowledge   # the Markdown repository
       - granola-pi-state:/data/state                              # SQLite database and logs
     restart: unless-stopped
 
 volumes:
-  granola-pi-state:
+  granola-pi-state:   # name kept from before the rename to CHRONIQ so existing data is reused

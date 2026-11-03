@@ -5,7 +5,7 @@ The app can import calls recorded by [Fireflies.ai](https://docs.fireflies.ai/ge
 ## Setup
 
 1. In Fireflies, open **app.fireflies.ai → Integrations → Fireflies API** and copy the API key.
-2. In the app, open **Settings → Connections → Fireflies connection**, paste the key, then click **Save & verify**. The key is validated with Fireflies and stored in Windows Credential Manager under `GranolaProjectIntelligence:FirefliesApiKey`.
+2. In the app, open **Settings → Connections → Fireflies connection**, paste the key, then click **Save & verify**. The key is validated with Fireflies and stored in Windows Credential Manager under `Chroniq:FirefliesApiKey`.
    - On servers, set the `FIREFLIES_API_KEY` environment variable instead.
 3. Run **Sync now**. The first run imports all calls from **Initial import from** onwards, or all history when that setting is empty.
 

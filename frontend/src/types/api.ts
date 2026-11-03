@@ -1,4 +1,4 @@
-// TypeScript types hand-written from docs/openapi.json (Granola Project Intelligence API).
+// TypeScript types hand-written from docs/openapi.json (CHRONIQ API).
 // Enums are serialized as JSON strings by the backend (JsonStringEnumConverter).
 // Integer fields are declared as `integer | string` in the OpenAPI document because of .NET number
 // handling, but the server always emits JSON numbers, so they are typed as `number` here.

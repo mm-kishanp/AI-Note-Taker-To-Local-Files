@@ -5,7 +5,7 @@ The app can import transcripts from the [WhisperAI API](https://whisperai.com/wh
 ## Setup
 
 1. In the [WhisperAI developer portal](https://whisperai.com/developer), create an API key (it starts with `wai_`).
-2. In the app, open **Settings → Connections → WhisperAI connection**, paste the key, then click **Save & verify**. The key is validated with WhisperAI and stored in Windows Credential Manager under `GranolaProjectIntelligence:WhisperAiApiKey`.
+2. In the app, open **Settings → Connections → WhisperAI connection**, paste the key, then click **Save & verify**. The key is validated with WhisperAI and stored in Windows Credential Manager under `Chroniq:WhisperAiApiKey`.
    - On servers, set the `WHISPERAI_API_KEY` environment variable instead.
 3. Run **Sync now**. The first run imports all transcripts from **Initial import from** onwards, or all history when that setting is empty.
 

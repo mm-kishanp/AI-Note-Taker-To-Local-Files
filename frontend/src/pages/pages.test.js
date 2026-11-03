@@ -43,7 +43,7 @@ describe('ReassignModal', () => {
         await waitFor(() => {
             const assign = calls.find((c) => c.url.pathname === '/api/meetings/m1/assign-project');
             expect(assign?.body).toMatchObject({ kind: 'Shared' });
-            expect(assign?.headers['X-GPI-Request']).toBe('1');
+            expect(assign?.headers['X-Chroniq-Request']).toBe('1');
         });
         const previewIdx = calls.findIndex((c) => c.url.pathname.endsWith('/destination-preview'));
         const assignIdx = calls.findIndex((c) => c.url.pathname.endsWith('/assign-project'));

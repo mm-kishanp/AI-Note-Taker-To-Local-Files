@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-  Installs, starts, or removes the background "Granola PI" scheduled task. Called by setup.bat.
+  Installs, starts, or removes the background "CHRONIQ" scheduled task. Called by setup.bat.
 
   Install: registers a task that starts the app hidden at logon for the current user (it must run as
   you, because the Granola key lives in your Windows Credential Manager), restarts it after a crash,
@@ -13,31 +13,40 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
-$TaskName = 'Granola PI'
+$TaskName = 'CHRONIQ'
 $root = Split-Path -Parent $PSScriptRoot
 $publish = Join-Path $root 'publish'
 $launcher = Join-Path $PSScriptRoot 'start-background.ps1'
-$startupCmd = Join-Path ([Environment]::GetFolderPath('Startup')) 'Granola PI.cmd'
+$startupCmd = Join-Path ([Environment]::GetFolderPath('Startup')) 'CHRONIQ.cmd'
+# Names used before the rename to CHRONIQ, cleaned up so an old install does not keep running alongside.
+$LegacyTaskName = 'Granola PI'
+$legacyStartupCmd = Join-Path ([Environment]::GetFolderPath('Startup')) 'Granola PI.cmd'
 $url = "http://127.0.0.1:$Port"
 
 function Stop-App {
-    if (Get-ScheduledTask -TaskName $TaskName -ErrorAction SilentlyContinue) {
-        Stop-ScheduledTask -TaskName $TaskName -ErrorAction SilentlyContinue
+    foreach ($name in $TaskName, $LegacyTaskName) {
+        if (Get-ScheduledTask -TaskName $name -ErrorAction SilentlyContinue) {
+            Stop-ScheduledTask -TaskName $name -ErrorAction SilentlyContinue
+        }
     }
     # Any copy running from this repo: publish\ (task, Startup fallback, previous port) or bin\ (run.bat),
     # which would lock the build output and share the same database.
-    Get-Process -Name 'GranolaPI.Api' -ErrorAction SilentlyContinue |
+    Get-Process -Name 'Chroniq.Api', 'GranolaPI.Api' -ErrorAction SilentlyContinue |
         Where-Object { $_.Path -and $_.Path.StartsWith($root, [StringComparison]::OrdinalIgnoreCase) } |
         ForEach-Object { Write-Host "  stopping running instance (PID $($_.Id))"; Stop-Process -Id $_.Id -Force }
     Start-Sleep -Milliseconds 500
 }
 
 function Remove-Autostart {
-    if (Get-ScheduledTask -TaskName $TaskName -ErrorAction SilentlyContinue) {
-        Unregister-ScheduledTask -TaskName $TaskName -Confirm:$false
-        Write-Host "  removed scheduled task '$TaskName'"
+    foreach ($name in $TaskName, $LegacyTaskName) {
+        if (Get-ScheduledTask -TaskName $name -ErrorAction SilentlyContinue) {
+            Unregister-ScheduledTask -TaskName $name -Confirm:$false
+            Write-Host "  removed scheduled task '$name'"
+        }
     }
-    if (Test-Path $startupCmd) { Remove-Item $startupCmd -Force; Write-Host '  removed Startup folder entry' }
+    foreach ($cmd in $startupCmd, $legacyStartupCmd) {
+        if (Test-Path $cmd) { Remove-Item $cmd -Force; Write-Host "  removed Startup folder entry $cmd" }
+    }
 }
 
 if ($Action -eq 'Stop') { Stop-App; exit 0 }
@@ -64,7 +73,7 @@ try {
         -Settings (New-ScheduledTaskSettingsSet -ExecutionTimeLimit ([TimeSpan]::Zero) -RestartCount 999 `
             -RestartInterval (New-TimeSpan -Minutes 1) -StartWhenAvailable -MultipleInstances IgnoreNew `
             -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries) `
-        -Description "Granola Project Intelligence Sync on $url (installed by setup.bat)"
+        -Description "CHRONIQ on $url (installed by setup.bat)"
     Register-ScheduledTask -TaskName $TaskName -InputObject $task | Out-Null
     Start-ScheduledTask -TaskName $TaskName
     Write-Host "  registered scheduled task '$TaskName' (starts at logon, restarts after a crash)"
@@ -89,7 +98,7 @@ $settings = Invoke-RestMethod "$url/api/settings"
 $sync = $settings.sync
 $sync.autoSyncEnabled = $true
 $sync.intervalMinutes = $IntervalMinutes
-Invoke-RestMethod "$url/api/settings" -Method Put -Headers @{ 'X-GPI-Request' = '1' } -ContentType 'application/json' `
+Invoke-RestMethod "$url/api/settings" -Method Put -Headers @{ 'X-Chroniq-Request' = '1' } -ContentType 'application/json' `
     -Body (@{ sync = $sync } | ConvertTo-Json -Depth 5) | Out-Null
 Write-Host "  auto-sync enabled: every $IntervalMinutes minutes"
 

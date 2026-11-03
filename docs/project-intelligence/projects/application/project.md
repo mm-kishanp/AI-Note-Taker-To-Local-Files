@@ -1,9 +1,9 @@
-# GranolaPI.Application (use cases)
+# Chroniq.Application (use cases)
 
 Last reviewed: 2026-10-28
 
 - Type: Library
-- Location: `src/GranolaPI.Application/`
+- Location: `src/Chroniq.Application/`
 - Status: Active
 - Confidence: High
 - Part of: [project.md](../../project.md)
@@ -35,14 +35,14 @@ The heart of the product: synchronisation orchestration, meeting processing, cla
 | Runtime / framework | `net10.0`; EF Core 10.0.5 (abstractions via `IAppDbContext`), Logging/Options abstractions | csproj |
 | Build | part of the solution | — |
 | Run locally | not runnable alone | — |
-| Tests | `tests/GranolaPI.UnitTests` (classification, export, Markdown/paths) and integration tests | test projects |
+| Tests | `tests/Chroniq.UnitTests` (classification, export, Markdown/paths) and integration tests | test projects |
 | Deployed as | inside the API | — |
 
 ## Dependencies
 
 | Depends on | Kind | Why | Evidence |
 | --- | --- | --- | --- |
-| GranolaPI.Domain | sub-project | Entities, enums, rules | csproj |
+| Chroniq.Domain | sub-project | Entities, enums, rules | csproj |
 | Microsoft.EntityFrameworkCore | package | LINQ over `IAppDbContext` | csproj |
 
 ## Interfaces

@@ -1,13 +1,13 @@
 @echo off
 setlocal EnableExtensions
 REM ============================================================================
-REM  Granola Project Intelligence Sync - stop everything started by run.bat
+REM  CHRONIQ - stop everything started by run.bat
 REM
 REM    stop.bat    Stops the app (port 5080), the Vite dev server (port 5173)
-REM                and closes the "Granola PI" windows opened by "run.bat dev".
+REM                and closes the "CHRONIQ" windows opened by "run.bat dev".
 REM ============================================================================
 
-echo Stopping Granola Project Intelligence Sync...
+echo Stopping CHRONIQ...
 
 powershell -NoProfile -Command ^
   "$found = $false;" ^
@@ -22,7 +22,7 @@ powershell -NoProfile -Command ^
   "if (-not $found) { Write-Host '  nothing was running on ports 5080 or 5173' }"
 
 REM Close the console windows opened by "run.bat dev" (no error if none are open).
-taskkill /F /T /FI "WINDOWTITLE eq Granola PI*" >nul 2>&1
+taskkill /F /T /FI "WINDOWTITLE eq CHRONIQ*" >nul 2>&1
 
 echo Done.
 endlocal

@@ -5,8 +5,8 @@
 import { readFileSync, existsSync, readdirSync, statSync, writeFileSync } from "node:fs";
 import { join, relative } from "node:path";
 
-const B = process.env.GPI_URL ?? "http://127.0.0.1:5080/api";
-const H = { "Content-Type": "application/json", "X-GPI-Request": "1" };
+const B = process.env.CHRONIQ_URL ?? "http://127.0.0.1:5080/api";
+const H = { "Content-Type": "application/json", "X-Chroniq-Request": "1" };
 const root = process.argv[2];
 const days = Number(process.argv[3] ?? 10);
 if (!root) throw new Error("usage: node scripts/e2e-live.mjs <exportRoot> [days]");

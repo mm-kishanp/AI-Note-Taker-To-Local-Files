@@ -37,7 +37,7 @@ There are no accounts, roles or per-user data (Verified).
 - **FR-011 (FEAT-008):** Given an unassigned meeting, when the user saves a mapping from it and confirms, then matching meetings are re-classified and moved. *Tests:* `Unassigned_meeting_is_reassigned_after_saving_a_mapping`.
 - **FR-012 (FEAT-010):** Given project input, when saved, then slugs are unique and invalid input returns field errors. *Tests:* `Project_validation_and_unique_slugs`.
 - **FR-013 (FEAT-015):** Given a new API key, when saved with validation and the source rejects it (401), then the previous key is restored and the full key is never returned by the API. *Tests:* `Credentials_are_masked_…`, `Invalid_key_input_…`.
-- **FR-014 (FEAT-020):** Given a state-changing API request without `X-GPI-Request: 1`, then it is rejected with 403. *Tests:* `State_changing_requests_require_the_csrf_header`.
+- **FR-014 (FEAT-020):** Given a state-changing API request without `X-Chroniq-Request: 1`, then it is rejected with 403. *Tests:* `State_changing_requests_require_the_csrf_header`.
 - **FR-015 (FEAT-001):** Given a meeting deleted or no longer accessible at the source, when syncing, then its exported files are kept and it is marked Deleted/Inaccessible. *Tests:* `Deleted_or_inaccessible_notes_keep_exported_files`.
 
 ## Non-functional requirements

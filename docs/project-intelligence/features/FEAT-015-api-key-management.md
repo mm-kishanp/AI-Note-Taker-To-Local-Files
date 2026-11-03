@@ -37,7 +37,7 @@ The user pastes a Granola, Fireflies or Anthropic key in Settings; it is validat
 
 | Entity / table | Read / write | Notes |
 | --- | --- | --- |
-| Windows Credential Manager `GranolaProjectIntelligence:{GranolaApiKey,FirefliesApiKey,AiApiKey}` | R/W | Secret values |
+| Windows Credential Manager `Chroniq:{GranolaApiKey,FirefliesApiKey,AiApiKey}` | R/W | Secret values |
 | `ApplicationSettings` `granola.connection`, `fireflies.connection` | R/W | last check status only, no secrets |
 
 ## Integrations and side effects

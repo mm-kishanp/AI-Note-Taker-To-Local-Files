@@ -24,7 +24,7 @@ Last reviewed: 2026-10-28
 | Check | Result | Evidence |
 | --- | --- | --- |
 | Consistent casing | Follows | sampled files |
-| Names match the glossary | Partly | `Meeting.GranolaNoteId` stores Fireflies transcript IDs too (`Entities.cs:63-64`); `WorkItem.GranolaNoteId`, `GranolaNoteFetch`, `GranolaConnectionResult`, `GranolaConnectionState` used for Fireflies; `GranolaPI` prefix everywhere (product was renamed from a Granola-only tool) |
+| Names match the glossary | Partly | `Meeting.GranolaNoteId` stores Fireflies transcript IDs too (`Entities.cs:63-64`); `WorkItem.GranolaNoteId`, `GranolaNoteFetch`, `GranolaConnectionResult`, `GranolaConnectionState` used for Fireflies; `Chroniq` prefix everywhere (product was renamed from a Granola-only tool) |
 | Suppressed warnings | Partly | C#: only in generated migrations (`#pragma warning disable 612, 618`). Frontend: 8 `eslint-disable-next-line react-hooks/exhaustive-deps` although no ESLint is configured (dead directives) |
 | Debug leftovers | Follows | 0 `Console.Write`, 0 `console.*` |
 | Committed artefacts | Does not | `frontend/src/**/*.js`, `vite.config.js`, `tsconfig.tsbuildinfo` (RF-001); `run-test.log` (RF-013); `tools/node-cli/config.example copy.json` (RF-011) |

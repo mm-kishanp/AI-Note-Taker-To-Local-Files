@@ -9,7 +9,7 @@ Last reviewed: 2026-10-28
 
 This is a **self-hosted, single-user app with no central deployment**. Each user builds and runs their own copy. There are two documented ways:
 
-1. **Windows desktop (primary):** build the UI into the API's `wwwroot`, then either double-click `run.bat` (build + run from source) or `dotnet publish` and run `GranolaPI.Api.exe`, optionally from Task Scheduler at log-on. `setup.bat [port] [minutes]` automates the latter: publishes to `publish\`, registers the per-user "Granola PI" logon task (`scripts/setup-autostart.ps1`, launcher `scripts/start-background.ps1`, restart on failure, no time limit, Startup-folder fallback when task registration is blocked), and enables `sync.autoSyncEnabled` / `sync.intervalMinutes` via `PUT /api/settings`. It runs as the signed-in user, not as a service, because keys live in that user's Windows Credential Manager. It listens on `127.0.0.1:5080` only (or the port given to `setup.bat`).
+1. **Windows desktop (primary):** build the UI into the API's `wwwroot`, then either double-click `run.bat` (build + run from source) or `dotnet publish` and run `Chroniq.Api.exe`, optionally from Task Scheduler at log-on. `setup.bat [port] [minutes]` automates the latter: publishes to `publish\`, registers the per-user "CHRONIQ" logon task (`scripts/setup-autostart.ps1`, launcher `scripts/start-background.ps1`, restart on failure, no time limit, Startup-folder fallback when task registration is blocked), and enables `sync.autoSyncEnabled` / `sync.intervalMinutes` via `PUT /api/settings`. It runs as the signed-in user, not as a service, because keys live in that user's Windows Credential Manager. It listens on `127.0.0.1:5080` only (or the port given to `setup.bat`).
 2. **Server / NAS:** `docker compose up -d` builds a multi-stage image locally and runs it with keys and an API token from a `.env` file, bound to `127.0.0.1:8080` behind a user-provided TLS reverse proxy.
 
 There is no CD pipeline, no published image or package, no versioning and no release tags (Verified: `git tag` is empty; CI has no publish step).
@@ -22,7 +22,7 @@ flowchart LR
     CI -.no artifact published.-> X[(none)]
     User[User clones repo] --> A{Target}
     A -- Windows desktop --> B[scripts/build-frontend.ps1 → wwwroot]
-    B --> C[run.bat or dotnet publish → GranolaPI.Api.exe]
+    B --> C[run.bat or dotnet publish → Chroniq.Api.exe]
     C --> D[Start-up: EF migrations → listen 127.0.0.1:5080]
     A -- Server/NAS --> E[docker compose up -d --build]
     E --> F[node:22 builds UI → sdk:10.0 publishes → aspnet:10.0 runtime]
@@ -33,7 +33,7 @@ flowchart LR
 
 | Sub-project | Artifact | Registry / store | Versioning / tagging | Target | Evidence |
 | --- | --- | --- | --- | --- | --- |
-| API host (+ Worker, Application, Infrastructure, Domain) | `dotnet publish` output (`GranolaPI.Api.exe` / `.dll`) | None | None (assembly version default; `/api/health` reports it) | User's Windows machine | `README.md:91-94`, `SystemControllers.cs:25` |
+| API host (+ Worker, Application, Infrastructure, Domain) | `dotnet publish` output (`Chroniq.Api.exe` / `.dll`) | None | None (assembly version default; `/api/health` reports it) | User's Windows machine | `README.md:91-94`, `SystemControllers.cs:25` |
 | Frontend | Vite `dist/` copied to `wwwroot/` | None | None | Served by the API | `scripts/build-frontend.ps1`, `Dockerfile:18` |
 | Container | Local image built by compose (`build: .`) | None | None | User's server/NAS | `docker-compose.yml` |
 | `tools/node-cli` | Not deployed | — | — | — | `README.md:43` |
@@ -45,7 +45,7 @@ flowchart LR
 | Development | Local coding | `dotnet run` with `ASPNETCORE_ENVIRONMENT=Development`; Vite dev server | `appsettings.Development.json` (`App:BaseDirectory=../..`), `launchSettings.json` | none required | files |
 | Testing | Integration tests | `WebApplicationFactory` with environment `Testing`, worker off, in-memory credentials | `TestHost.cs:197-201` | none | file |
 | Production (desktop) | Personal use | `run.bat` (sets `ASPNETCORE_ENVIRONMENT=Production`, `App__BaseDirectory`) or published exe | `appsettings.json`, settings in SQLite, Windows Credential Manager | optional `GRANOLA_API_KEY`, `FIREFLIES_API_KEY`, `ANTHROPIC_API_KEY` | `run.bat`, `appsettings.json` |
-| Production (container) | Server/NAS | `docker compose up -d` | env vars from `.env` | `GRANOLA_API_KEY` (required by compose), `GPI_API_TOKEN` → `Security__ApiToken` (required), `FIREFLIES_API_KEY`, `ANTHROPIC_API_KEY` (optional); image sets `ASPNETCORE_URLS`, `App__BaseDirectory=/data`, `App__DataDirectory=/data/state`, `Security__UseWindowsCredentialManager=false` | `docker-compose.yml`, `Dockerfile` |
+| Production (container) | Server/NAS | `docker compose up -d` | env vars from `.env` | `GRANOLA_API_KEY` (required by compose), `CHRONIQ_API_TOKEN` → `Security__ApiToken` (required), `FIREFLIES_API_KEY`, `ANTHROPIC_API_KEY` (optional); image sets `ASPNETCORE_URLS`, `App__BaseDirectory=/data`, `App__DataDirectory=/data/state`, `Security__UseWindowsCredentialManager=false` | `docker-compose.yml`, `Dockerfile` |
 
 ## Pipelines
 
@@ -55,7 +55,7 @@ flowchart LR
 
 ## Infrastructure
 
-Not applicable — no infrastructure as code (Verified: no Terraform, Bicep, Kubernetes, Helm or cloud config files). The container needs one volume for state (`granola-pi-state:/data/state`) and one bind mount for the Markdown repository (`./GranolaProjectKnowledge:/data/GranolaProjectKnowledge`).
+Not applicable — no infrastructure as code (Verified: no Terraform, Bicep, Kubernetes, Helm or cloud config files). The container needs one volume for state (`granola-pi-state:/data/state`) and one bind mount for the Markdown repository (`./ChroniqKnowledge:/data/ChroniqKnowledge`).
 
 ## Configuration and secrets
 
@@ -65,7 +65,7 @@ Not applicable — no infrastructure as code (Verified: no Terraform, Bicep, Kub
 
 ## Database migrations
 
-Applied automatically at every start-up (`Program.cs:48-51`). There is no separate migration step, no pre-deploy backup and no down-migration procedure. Back up `data/granola-pi.db` (or the `/data/state` volume) before upgrading.
+Applied automatically at every start-up (`Program.cs:48-51`). There is no separate migration step, no pre-deploy backup and no down-migration procedure. Back up `data/chroniq.db` (or the `/data/state` volume) before upgrading.
 
 ## Release process
 
@@ -76,7 +76,7 @@ Applied automatically at every start-up (`Program.cs:48-51`). There is no separa
 
 ## Rollback
 
-Desktop: check out the previous commit, rebuild, restore the backed-up `granola-pi.db` if a migration ran. Container: rebuild from the previous commit; restore the state volume. Because migrations run automatically and nothing is versioned, rollback is manual and requires a database backup (Inferred, High). Exported Markdown files are never deleted by the app, so they survive a rollback.
+Desktop: check out the previous commit, rebuild, restore the backed-up `chroniq.db` if a migration ran. Container: rebuild from the previous commit; restore the state volume. Because migrations run automatically and nothing is versioned, rollback is manual and requires a database backup (Inferred, High). Exported Markdown files are never deleted by the app, so they survive a rollback.
 
 ## Post-deploy verification
 

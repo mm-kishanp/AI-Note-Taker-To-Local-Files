@@ -1,4 +1,4 @@
-# Granola Project Intelligence Sync
+# CHRONIQ
 
 Last reviewed: 2026-10-28
 
@@ -57,11 +57,11 @@ Full list with evidence: [feature-inventory.md](feature-inventory.md).
 
 | Sub-project | What it is | Type | Location | Page |
 | --- | --- | --- | --- | --- |
-| API host | The running app: web API, security, hosts the UI and the scheduler | API | `src/GranolaPI.Api/` | [projects/api](projects/api/project.md) |
-| Worker | The scheduler that starts automatic syncs | Worker | `src/GranolaPI.Worker/` | [projects/worker](projects/worker/project.md) |
-| Application | The business logic: syncing, sorting, writing files | Library | `src/GranolaPI.Application/` | [projects/application](projects/application/project.md) |
-| Infrastructure | Connections to Granola, Fireflies, Claude, the database, the key store and log files | Library | `src/GranolaPI.Infrastructure/` | [projects/infrastructure](projects/infrastructure/project.md) |
-| Domain | The basic data types | Library | `src/GranolaPI.Domain/` | [projects/domain](projects/domain/project.md) |
+| API host | The running app: web API, security, hosts the UI and the scheduler | API | `src/Chroniq.Api/` | [projects/api](projects/api/project.md) |
+| Worker | The scheduler that starts automatic syncs | Worker | `src/Chroniq.Worker/` | [projects/worker](projects/worker/project.md) |
+| Application | The business logic: syncing, sorting, writing files | Library | `src/Chroniq.Application/` | [projects/application](projects/application/project.md) |
+| Infrastructure | Connections to Granola, Fireflies, Claude, the database, the key store and log files | Library | `src/Chroniq.Infrastructure/` | [projects/infrastructure](projects/infrastructure/project.md) |
+| Domain | The basic data types | Library | `src/Chroniq.Domain/` | [projects/domain](projects/domain/project.md) |
 | Frontend | The screens you use in the browser | Web app | `frontend/` | [projects/frontend](projects/frontend/project.md) |
 | Node CLI | The earlier script version, kept for reference | CLI (deprecated) | `tools/node-cli/` | [projects/node-cli](projects/node-cli/project.md) |
 

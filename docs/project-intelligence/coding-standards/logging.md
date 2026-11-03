@@ -2,7 +2,7 @@
 
 Last reviewed: 2026-10-28
 
-- Evidence scope: `FileLogger.cs`, `Program.cs` logging setup, `src/GranolaPI.Infrastructure/DependencyInjection.cs`, `SettingsController.ApplyLogging`, every `logger.Log*` call in sampled files; `Console.Write` grep (0 hits in `src`); frontend `console.*` (0, sub-audit).
+- Evidence scope: `FileLogger.cs`, `Program.cs` logging setup, `src/Chroniq.Infrastructure/DependencyInjection.cs`, `SettingsController.ApplyLogging`, every `logger.Log*` call in sampled files; `Console.Write` grep (0 hits in `src`); frontend `console.*` (0, sub-audit).
 - Status: Mostly consistent
 - Back to: [overview.md](overview.md)
 
@@ -24,7 +24,7 @@ Last reviewed: 2026-10-28
 | No secrets in logs | Partly | Redactor covers `grn_`, `sk-ant-`, `Bearer`; Fireflies key pattern missing (SEC-003) |
 | No personal data | Partly | Export paths (contain meeting titles) logged at Information (`MeetingExporter.cs:212`); `ApiExceptionHandler` logs `ex.Message` for 4xx (`Middleware.cs:32`) |
 | Correlation ID in log entries | Partly | Middleware sets `HttpContext.TraceIdentifier` to the correlation ID (`Middleware.cs:66-69`), but the file logger writes `Activity.Current.TraceId` (`FileLogger.cs:86-87`) and ignores scopes (`BeginScope` returns null, `:72`); the two IDs differ when the caller supplies `X-Correlation-ID` |
-| Runtime log configuration works | Does not | `LogSettingsState` is registered twice: the instance passed to `FileLoggerProvider` (`Program.cs:21-23`) and a second `AddSingleton<LogSettingsState>()` (`src/GranolaPI.Infrastructure/DependencyInjection.cs:51`). DI resolves the last registration, so `SettingsController` (`SystemControllers.cs:69, 86`) updates an instance the logger never reads. Changes apply only after restart, when `Program.cs:52-53` re-applies the saved settings to the logger's instance. RF-003 |
+| Runtime log configuration works | Does not | `LogSettingsState` is registered twice: the instance passed to `FileLoggerProvider` (`Program.cs:21-23`) and a second `AddSingleton<LogSettingsState>()` (`src/Chroniq.Infrastructure/DependencyInjection.cs:51`). DI resolves the last registration, so `SettingsController` (`SystemControllers.cs:69, 86`) updates an instance the logger never reads. Changes apply only after restart, when `Program.cs:52-53` re-applies the saved settings to the logger's instance. RF-003 |
 | Log retention | Follows | Daily files pruned after `RetentionDays` (`FileLogger.cs:50-55`) |
 | Back-pressure | Follows (lossy) | Bounded queue of 10 000; `TryAdd` drops lines when full (`FileLogger.cs:23, 38`) |
 
@@ -36,7 +36,7 @@ Copy `logger.LogWarning("Export of {Kind} for {NoteId} failed: {Category} {Messa
 
 | Where | What differs from the standard | Severity | Evidence |
 | --- | --- | --- | --- |
-| `src/GranolaPI.Infrastructure/DependencyInjection.cs:51` | Second `LogSettingsState` singleton shadows the logger's instance | Medium | see Checks |
+| `src/Chroniq.Infrastructure/DependencyInjection.cs:51` | Second `LogSettingsState` singleton shadows the logger's instance | Medium | see Checks |
 | `FileLogger` | Scopes ignored; correlation ID not logged | Low | `FileLogger.cs:72, 86` |
 | `SecretRedactor` | Missing Fireflies key pattern | Low | `FileLogger.cs:99` |
 

@@ -1,9 +1,9 @@
 # Architecture
 
-Granola Project Intelligence Sync is a modular monolith: one process hosts the REST API, the background synchronization worker, and the built React UI.
+CHRONIQ is a modular monolith: one process hosts the REST API, the background synchronization worker, and the built React UI.
 
 ```text
-            ┌──────────────── GranolaPI.Api (ASP.NET Core) ─────────────────┐
+            ┌──────────────── Chroniq.Api (ASP.NET Core) ─────────────────┐
  Browser ──►│ RequestProtection (CSRF header, loopback/API token)            │
  (React)    │ Controllers ──► Application services                           │
             │ SynchronizationWorker (BackgroundService) ──► SyncCoordinator  │
@@ -18,11 +18,11 @@ Granola Project Intelligence Sync is a modular monolith: one process hosts the R
 
 | Project | Responsibility | Key types |
 |---|---|---|
-| `GranolaPI.Domain` | Entities and enums with no dependencies. Text normalisation and slug rules. | `Meeting`, `Project`, `Client`, `ClassificationRule`, `ExportRecord`, `SyncRun`, `TextNormalizer`, `Slug` |
-| `GranolaPI.Application` | All business logic, independent of transport and storage technology. | `ClassificationEngine` (pure), `ClassificationService`, `MarkdownRenderer`, `ExportLayout`, `MeetingExporter`, `ProjectContextService`, `MeetingIngestor`, `MeetingProcessor`, `SyncEngine`, `SyncCoordinator`, services and DTOs |
-| `GranolaPI.Infrastructure` | Adapters to the outside world. | `AppDbContext` (EF Core/SQLite + migrations), `SettingsService`, `SqlSyncLease`, `GranolaApiClient` + `GranolaRequestThrottle`, `WindowsCredentialStore`, `SecretProvider`, `FileLoggerProvider`, `AnthropicAiClassifier`, `ShellLauncher` |
-| `GranolaPI.Worker` | Scheduled runs and restart recovery. | `SynchronizationWorker` |
-| `GranolaPI.Api` | HTTP surface, error mapping, request protection, static hosting of the UI. | Controllers, `ApiExceptionHandler`, `RequestProtectionMiddleware` |
+| `Chroniq.Domain` | Entities and enums with no dependencies. Text normalisation and slug rules. | `Meeting`, `Project`, `Client`, `ClassificationRule`, `ExportRecord`, `SyncRun`, `TextNormalizer`, `Slug` |
+| `Chroniq.Application` | All business logic, independent of transport and storage technology. | `ClassificationEngine` (pure), `ClassificationService`, `MarkdownRenderer`, `ExportLayout`, `MeetingExporter`, `ProjectContextService`, `MeetingIngestor`, `MeetingProcessor`, `SyncEngine`, `SyncCoordinator`, services and DTOs |
+| `Chroniq.Infrastructure` | Adapters to the outside world. | `AppDbContext` (EF Core/SQLite + migrations), `SettingsService`, `SqlSyncLease`, `GranolaApiClient` + `GranolaRequestThrottle`, `WindowsCredentialStore`, `SecretProvider`, `FileLoggerProvider`, `AnthropicAiClassifier`, `ShellLauncher` |
+| `Chroniq.Worker` | Scheduled runs and restart recovery. | `SynchronizationWorker` |
+| `Chroniq.Api` | HTTP surface, error mapping, request protection, static hosting of the UI. | Controllers, `ApiExceptionHandler`, `RequestProtectionMiddleware` |
 | `frontend/` | React UI that talks only to the documented REST API. | See `frontend/README.md` |
 
 The Application layer depends on `IAppDbContext` (EF Core abstractions), not on SQLite. To move to SQL Server or PostgreSQL, swap the provider in `Infrastructure/DependencyInjection.cs` and generate new migrations. The schema stores enums as strings and uses no SQLite-specific features.
@@ -51,7 +51,7 @@ A failure in one meeting never stops the others. Authentication and permission f
 
 The database and the file system cannot share a transaction, so the export is designed to be recoverable instead:
 
-- Files are written to `.<name>.<guid>.gpi-tmp` in the destination folder, flushed, and renamed over the target. Stray temp files are removed at the start of each run.
+- Files are written to `.<name>.<guid>.chroniq-tmp` in the destination folder, flushed, and renamed over the target. Stray temp files are removed at the start of each run.
 - An `ExportRecord` is marked `Exported` only after its file is on disk. Notes and transcripts have separate records, so a failed transcript can be retried without rewriting the notes.
 - Every generated file carries its source ID (`granola_note_id` or `fireflies_transcript_id`) and `content_hash` in its front matter. User edits, and files the app did not generate, can therefore be detected even when the database is lost.
 
@@ -59,7 +59,7 @@ The database and the file system cannot share a transaction, so the export is de
 
 | Store | Contents |
 |---|---|
-| SQLite (`data/granola-pi.db`) | Normalised meeting records (including stored source content, so files can be regenerated without re-downloading), projects/clients/rules, export records, sync runs and items, settings, review audit, sync lease. |
+| SQLite (`data/chroniq.db`) | Normalised meeting records (including stored source content, so files can be regenerated without re-downloading), projects/clients/rules, export records, sync runs and items, settings, review audit, sync lease. |
 | Export roots | Markdown notes, transcripts, `README.md`, `PROJECT_CONTEXT.md`, `ReviewQueue.md`. These are portable and self-describing. |
 | OS credential store / environment | Granola API key, optional Anthropic API key. |
 

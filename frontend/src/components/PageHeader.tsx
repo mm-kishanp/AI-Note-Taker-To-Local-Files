@@ -13,7 +13,7 @@ export interface PageHeaderProps {
 export function PageHeader({ title, description, actions, docTitle }: PageHeaderProps) {
   useEffect(() => {
     const t = docTitle ?? (typeof title === 'string' ? title : undefined);
-    if (t) document.title = `${t} · Granola PI Sync`;
+    if (t) document.title = `${t} · CHRONIQ`;
   }, [docTitle, title]);
 
   return (

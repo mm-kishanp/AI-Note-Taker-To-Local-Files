@@ -1,11 +1,11 @@
-# Granola Project Intelligence Sync
+# CHRONIQ
 
 A local-first app that pulls your meetings from [Granola](https://docs.granola.ai/introduction) and, optionally, the calls recorded by [Fireflies.ai](https://docs.fireflies.ai/getting-started/quickstart) and the transcripts in your [WhisperAI](https://whisperai.com/whisper-api/docs) API account. It works out which project each one belongs to, and saves the notes and the transcript as separate Markdown files in a folder structure you control.
 
 The output is a plain folder of Markdown. It stays useful when the app isn't running: open it in VS Code, commit it to Git, or point Claude Code, GitHub Copilot or another coding agent at a project folder.
 
 ```text
-GranolaProjectKnowledge/
+ChroniqKnowledge/
 ├── Projects/
 │   └── MotorDealerApp/
 │       ├── Notes/2026-10-26-Client-Requirement-Discussion.md
@@ -33,11 +33,11 @@ GranolaProjectKnowledge/
 A modular monolith: ASP.NET Core 10 Web API, EF Core with SQLite, and a background worker, plus a React + TypeScript (Vite, Mantine, TanStack Query) frontend.
 
 ```text
-src/GranolaPI.Domain          Entities, enums, normalisation rules
-src/GranolaPI.Application     Use cases: classification engine, Markdown export, sync engine, services, DTOs
-src/GranolaPI.Infrastructure  EF Core/SQLite, Granola API client, credential stores, file logger, Claude classifier
-src/GranolaPI.Worker          Scheduled synchronisation (BackgroundService)
-src/GranolaPI.Api             REST API, middleware, hosts the worker and the built frontend
+src/Chroniq.Domain          Entities, enums, normalisation rules
+src/Chroniq.Application     Use cases: classification engine, Markdown export, sync engine, services, DTOs
+src/Chroniq.Infrastructure  EF Core/SQLite, Granola API client, credential stores, file logger, Claude classifier
+src/Chroniq.Worker          Scheduled synchronisation (BackgroundService)
+src/Chroniq.Api             REST API, middleware, hosts the worker and the built frontend
 frontend/                     React UI
 tests/                        xUnit unit + integration tests (frontend tests live in frontend/)
 tools/node-cli/               The earlier zero-dependency Node script, kept for reference
@@ -57,14 +57,14 @@ For details see [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 Double-click `run.bat`. It builds what is missing, starts the app at http://127.0.0.1:5080 and opens your browser. `stop.bat` stops it. Other modes: `run.bat rebuild` (after pulling changes), `run.bat dev` (hot-reload UI) and `run.bat test`.
 
-To keep it always running instead, run `setup.bat [port] [minutes]` (default `5080`, `60`). It publishes the app to `publish\`, registers a "Granola PI" Task Scheduler task that starts it hidden at every Windows sign-in and restarts it after a crash, and turns on scheduled sync at that interval. `setup.bat stop` stops it until next sign-in, `setup.bat uninstall` removes the task (data is kept). Re-run `setup.bat` after pulling changes.
+To keep it always running instead, run `setup.bat [port] [minutes]` (default `5080`, `60`). It publishes the app to `publish\`, registers a "CHRONIQ" Task Scheduler task that starts it hidden at every Windows sign-in and restarts it after a crash, and turns on scheduled sync at that interval. `setup.bat stop` stops it until next sign-in, `setup.bat uninstall` removes the task (data is kept). Re-run `setup.bat` after pulling changes.
 
 The manual equivalent:
 
 ```powershell
 dotnet tool restore
-./scripts/build-frontend.ps1                # builds the UI into src/GranolaPI.Api/wwwroot
-dotnet run --project src/GranolaPI.Api      # http://127.0.0.1:5080
+./scripts/build-frontend.ps1                # builds the UI into src/Chroniq.Api/wwwroot
+dotnet run --project src/Chroniq.Api      # http://127.0.0.1:5080
 ```
 
 Then, in the app:
@@ -81,7 +81,7 @@ Then, in the app:
 ```powershell
 # Backend (Development: base directory = repo root, OpenAPI + Swagger UI at /swagger)
 $env:ASPNETCORE_ENVIRONMENT = "Development"
-dotnet run --project src/GranolaPI.Api
+dotnet run --project src/Chroniq.Api
 
 # Frontend with hot reload (proxies /api to 127.0.0.1:5080)
 cd frontend; npm install; npm run dev       # http://localhost:5173
@@ -93,8 +93,8 @@ The REST contract is documented by OpenAPI at `/openapi/v1.json` in Development,
 
 | Scenario | How |
 |---|---|
-| Personal Windows machine | `dotnet publish src/GranolaPI.Api -c Release -o publish` after building the frontend, then run `publish/GranolaPI.Api.exe` (for example, from Task Scheduler at log-on). It listens on `127.0.0.1:5080` only. |
-| Server / NAS | `docker compose up -d` with `GRANOLA_API_KEY` (and optionally `FIREFLIES_API_KEY`, `WHISPERAI_API_KEY`) and `GPI_API_TOKEN` in a `.env` file. Remote callers must send the API token; put HTTPS in front. See [docs/INSTALLATION.md](docs/INSTALLATION.md). |
+| Personal Windows machine | `dotnet publish src/Chroniq.Api -c Release -o publish` after building the frontend, then run `publish/Chroniq.Api.exe` (for example, from Task Scheduler at log-on). It listens on `127.0.0.1:5080` only. |
+| Server / NAS | `docker compose up -d` with `GRANOLA_API_KEY` (and optionally `FIREFLIES_API_KEY`, `WHISPERAI_API_KEY`) and `CHRONIQ_API_TOKEN` in a `.env` file. Remote callers must send the API token; put HTTPS in front. See [docs/INSTALLATION.md](docs/INSTALLATION.md). |
 
 ## Configuration
 
@@ -121,7 +121,7 @@ Ambiguous results go to review by default. Anonymous labels such as "Speaker A" 
 | Data | Location | Portable? |
 |---|---|---|
 | Meeting knowledge (Markdown) | Export root(s) | Yes. Copy, back up or put under Git. Files are self-describing (front matter has the Granola note ID). |
-| Operational state: meetings, mappings, export records, sync history, settings | `data/granola-pi.db` (SQLite) | Yes, with the app. Copying only the Markdown does **not** carry this over. |
+| Operational state: meetings, mappings, export records, sync history, settings | `data/chroniq.db` (SQLite) | Yes, with the app. Copying only the Markdown does **not** carry this over. |
 | Granola / Fireflies / WhisperAI / AI API keys | Windows Credential Manager, or environment variables | No. Re-enter on a new machine. |
 | Logs | `data/logs` (JSON lines; secrets redacted) | — |
 

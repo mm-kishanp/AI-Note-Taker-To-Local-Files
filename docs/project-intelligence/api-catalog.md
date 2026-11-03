@@ -2,7 +2,7 @@
 
 Last reviewed: 2026-10-28
 
-- Evidence scope: every controller in `src/GranolaPI.Api/Controllers/` (57 endpoints), `Program.cs` route mappings, `Middleware/Middleware.cs`. The generated contract snapshot is [docs/openapi.json](../openapi.json) (served at `/openapi/v1.json` and Swagger UI `/swagger` in Development only, `Program.cs:60-64`; the integration test `Openapi_document_is_not_exposed_outside_development` proves it is hidden otherwise).
+- Evidence scope: every controller in `src/Chroniq.Api/Controllers/` (57 endpoints), `Program.cs` route mappings, `Middleware/Middleware.cs`. The generated contract snapshot is [docs/openapi.json](../openapi.json) (served at `/openapi/v1.json` and Swagger UI `/swagger` in Development only, `Program.cs:60-64`; the integration test `Openapi_document_is_not_exposed_outside_development` proves it is hidden otherwise).
 - Confidence: High
 
 ## Authentication and conventions (apply to every `/api` route)
@@ -10,7 +10,7 @@ Last reviewed: 2026-10-28
 | Rule | Detail | Evidence |
 |---|---|---|
 | Caller restriction | Without `Security:ApiToken`: only loopback callers (403 otherwise, unless `Security:AllowRemoteWithoutToken=true`). With a token: **every** caller (including loopback) must send `Authorization: Bearer <token>` (401 otherwise). `/api/health` is exempt. | `Middleware.cs:76-95` |
-| CSRF | Every non-GET/HEAD/OPTIONS `/api` request must send `X-GPI-Request: 1` (403 otherwise) | `Middleware.cs:97-102`; test `State_changing_requests_require_the_csrf_header` |
+| CSRF | Every non-GET/HEAD/OPTIONS `/api` request must send `X-Chroniq-Request: 1` (403 otherwise) | `Middleware.cs:97-102`; test `State_changing_requests_require_the_csrf_header` |
 | Host / CORS | `AllowedHosts` `localhost;127.0.0.1` (desktop) / `*` (compose); CORS origins `Security:AllowedOrigins` (default Vite dev server) | `appsettings.json`, `docker-compose.yml`, `Program.cs:40-44` |
 | Errors | RFC 7807 problem details with `category`, `correlationId`, and `errors[]` for validation; 400 validation, 404 not found, 409 sync running, 424 Granola auth/permission, 502 Granola error, 499 cancelled, 500 unexpected (message hidden outside Development) | `Middleware.cs:14-50` |
 | Headers | `X-Correlation-ID` echoed or generated; `Cache-Control: no-store` on `/api`; `X-Content-Type-Options: nosniff`; `Referrer-Policy: no-referrer` | `Middleware.cs:66-75` |

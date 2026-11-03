@@ -1,9 +1,9 @@
-# GranolaPI.Domain (entities and rules)
+# Chroniq.Domain (entities and rules)
 
 Last reviewed: 2026-10-28
 
 - Type: Library
-- Location: `src/GranolaPI.Domain/`
+- Location: `src/Chroniq.Domain/`
 - Status: Active
 - Confidence: High
 - Part of: [project.md](../../project.md)

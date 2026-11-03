@@ -30,7 +30,7 @@ Only the person on the machine — or, in server mode, someone holding the API t
 
 ## Behavior
 
-- **Main flow:** every response gets `X-Correlation-ID`, `nosniff`, `no-referrer`; `/api` responses get `Cache-Control: no-store`; caller check as above; state-changing `/api` requests need `X-GPI-Request: 1`. CORS only allows `Security:AllowedOrigins`; `AllowedHosts` limits host headers (desktop).
+- **Main flow:** every response gets `X-Correlation-ID`, `nosniff`, `no-referrer`; `/api` responses get `Cache-Control: no-store`; caller check as above; state-changing `/api` requests need `X-Chroniq-Request: 1`. CORS only allows `Security:AllowedOrigins`; `AllowedHosts` limits host headers (desktop).
 - **Validation and error cases:** 401/403 as RFC 7807 problems; token compared in constant time.
 - **Edge cases:** an over-long or missing correlation header is replaced (`:67`); `RemoteIpAddress == null` counts as loopback (`:80`).
 

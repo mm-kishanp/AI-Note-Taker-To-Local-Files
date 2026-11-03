@@ -2,7 +2,7 @@
 
 Last reviewed: 2026-10-28
 
-- Evidence scope: `src/GranolaPI.Api/Properties/launchSettings.json`, `appsettings*.json`, `Program.cs`, `FileLogger.cs`, `Middleware.cs`, `frontend/vite.config.ts`, `run.bat`, `stop.bat`, `tests/GranolaPI.IntegrationTests/TestHost.cs`, [docs/TROUBLESHOOTING.md](../TROUBLESHOOTING.md). All commands are **Documented** (read), none were run in this audit. No `.vscode/launch.json` or `.idea` run configurations are committed.
+- Evidence scope: `src/Chroniq.Api/Properties/launchSettings.json`, `appsettings*.json`, `Program.cs`, `FileLogger.cs`, `Middleware.cs`, `frontend/vite.config.ts`, `run.bat`, `stop.bat`, `tests/Chroniq.IntegrationTests/TestHost.cs`, [docs/TROUBLESHOOTING.md](../TROUBLESHOOTING.md). All commands are **Documented** (read), none were run in this audit. No `.vscode/launch.json` or `.idea` run configurations are committed.
 - Confidence: Medium
 
 ## Prerequisites
@@ -13,17 +13,17 @@ Last reviewed: 2026-10-28
 
 | Sub-project | How to start in debug mode | IDE configuration | Ports / URLs | Evidence |
 | --- | --- | --- | --- | --- |
-| API host (includes Worker, Application, Infrastructure, Domain) | `dotnet run --project src/GranolaPI.Api` (profile `http`, `ASPNETCORE_ENVIRONMENT=Development`), or F5 in Visual Studio / Rider / VS Code C# Dev Kit on `GranolaPI.Api` | `Properties/launchSettings.json` profile `http` | `http://127.0.0.1:5080`, Swagger `/swagger`, OpenAPI `/openapi/v1.json` | `launchSettings.json` |
+| API host (includes Worker, Application, Infrastructure, Domain) | `dotnet run --project src/Chroniq.Api` (profile `http`, `ASPNETCORE_ENVIRONMENT=Development`), or F5 in Visual Studio / Rider / VS Code C# Dev Kit on `Chroniq.Api` | `Properties/launchSettings.json` profile `http` | `http://127.0.0.1:5080`, Swagger `/swagger`, OpenAPI `/openapi/v1.json` | `launchSettings.json` |
 | Frontend | `cd frontend; npm run dev` (or `run.bat dev`, which opens API + Vite windows) | none committed; use browser devtools | `http://localhost:5173` (strict port), proxies `/api` and `/openapi` | `vite.config.ts` |
 | Node CLI (legacy) | `node --inspect tools/node-cli/granola-sync.js --dry-run` | none | — | `tools/node-cli/package.json` |
 
-Development mode sets `App:BaseDirectory` to the repo root (`appsettings.Development.json`), so the database is `<repo>/data/granola-pi.db` and the default export root is `<repo>/GranolaProjectKnowledge`.
+Development mode sets `App:BaseDirectory` to the repo root (`appsettings.Development.json`), so the database is `<repo>/data/chroniq.db` and the default export root is `<repo>/ChroniqKnowledge`.
 
 **Frontend gotcha (RF-001):** committed `.js` files next to the `.tsx` sources are resolved first by Vite and Vitest, and `vite.config.js` overrides `vite.config.ts`. If an edit to a `.tsx` file has no effect, this is why. Delete the generated `.js` twins locally (PIDA-001).
 
 ## Attach to a running process or container
 
-- Desktop: attach the .NET debugger to `GranolaPI.Api.exe` / `dotnet` (process started by `run.bat` in a window titled `Granola PI*`).
+- Desktop: attach the .NET debugger to `Chroniq.Api.exe` / `dotnet` (process started by `run.bat` in a window titled `CHRONIQ*`).
 - Container: the runtime image has no debugger; inspect logs in the `granola-pi-state` volume (`/data/state/logs`) or run the API locally against a copy of the database.
 
 ## Local configuration for debugging
@@ -40,7 +40,7 @@ Development mode sets `App:BaseDirectory` to the repo root (`appsettings.Develop
 
 ## Logs
 
-- Where logs go locally: `data/logs/granola-pi-yyyyMMdd.log` (JSON lines: `ts`, `level`, `category`, `message`, structured properties, `traceId`, `exception`). The console logger is also active under `dotnet run`.
+- Where logs go locally: `data/logs/chroniq-yyyyMMdd.log` (JSON lines: `ts`, `level`, `category`, `message`, structured properties, `traceId`, `exception`). The console logger is also active under `dotnet run`.
 - How to raise the log level: Settings → Logging (minimum level, directory, retention), or `Logging:LogLevel:Default` in configuration. **Known bug (RF-003):** level/directory changes saved in the UI only take effect after a restart.
 - How to find one request's logs: every API response and problem detail carries `X-Correlation-ID` / `correlationId`. The file logger writes `traceId` from `Activity.Current`, which is not always the same value as the correlation ID (the middleware prefers a caller-supplied header). Search by path and time if the IDs differ.
 - Sync failures: the Sync History page and `GET /api/sync/history/{id}` show per-meeting outcomes, error categories and messages; meetings carry `LastSyncError`, `FailureCount`, `NextRetryAt`.
@@ -49,7 +49,7 @@ Development mode sets `App:BaseDirectory` to the repo root (`appsettings.Develop
 
 - `dotnet test --filter "FullyQualifiedName~SyncIntegrationTests"`; debug a single test from the IDE test explorer.
 - `cd frontend; npx vitest <pattern>` or `npm run test:watch`.
-- Playwright: `npm run e2e -- --debug` against a running app (`GPI_E2E_URL`, default `http://127.0.0.1:5080`).
+- Playwright: `npm run e2e -- --debug` against a running app (`CHRONIQ_E2E_URL`, default `http://127.0.0.1:5080`).
 
 ## Background jobs, queues, and scheduled tasks
 
@@ -67,7 +67,7 @@ Read-only steps: `GET /api/health`; open Sync History; read the latest log file;
 | --- | --- | --- | --- |
 | 409 "Synchronization already running" | A run is in progress in this or another process (lease) | Wait, or cancel; lease expires after 10 min | `SyncCoordinator.cs:22-23`, `SyncEngine.cs:35` |
 | 424 "Granola rejected the request" / run fails with Authentication | Key revoked or wrong scope | Replace the key in Settings | `Middleware.cs:23`, `GranolaApiClient.cs:282-283` |
-| 403 "Missing X-GPI-Request header" when scripting | CSRF guard | Send `X-GPI-Request: 1` on POST/PUT/DELETE | `Middleware.cs:97-102` |
+| 403 "Missing X-Chroniq-Request header" when scripting | CSRF guard | Send `X-Chroniq-Request: 1` on POST/PUT/DELETE | `Middleware.cs:97-102` |
 | 403 "Remote access is disabled" | Calling from another host without a token | Set `Security:ApiToken` and send `Authorization: Bearer` | `Middleware.cs:91-94` |
 | Meeting in Conflict | File edited locally and source changed | Resolve on the meeting page (keep local / overwrite) | `MeetingExporter.cs:315` |
 | File "Missing" after a sync | You deleted/moved an exported file and nothing changed upstream | Run Reconcile to recreate | `MeetingExporter.cs:267-272` |
@@ -79,6 +79,6 @@ More: [docs/TROUBLESHOOTING.md](../TROUBLESHOOTING.md).
 
 ## Useful tools and commands
 
-- `dotnet ef migrations add <Name> --project src/GranolaPI.Infrastructure --startup-project src/GranolaPI.Api` — new migration (tool from `dotnet-tools.json`; Documented).
+- `dotnet ef migrations add <Name> --project src/Chroniq.Infrastructure --startup-project src/Chroniq.Api` — new migration (tool from `dotnet-tools.json`; Documented).
 - Swagger UI at `/swagger` (Development) — try endpoints with the CSRF header.
 - `python scripts/doc-freshness.py` — check this knowledge base for stale pages.

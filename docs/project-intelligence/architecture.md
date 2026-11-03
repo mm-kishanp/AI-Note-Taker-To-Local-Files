@@ -7,7 +7,7 @@ Last reviewed: 2026-10-28
 
 ## Current state
 
-**Verified:** a single-process modular monolith. One ASP.NET Core 10 process (`src/GranolaPI.Api/Program.cs`) hosts the REST API, the scheduled `SynchronizationWorker` and the built React SPA (`UseStaticFiles` + `MapFallbackToFile("index.html")`, `Program.cs:67-73`). State lives in one SQLite file (`data/granola-pi.db`, `Program.cs:19`); the product output is a folder of Markdown files under configurable export roots. EF Core migrations are applied automatically at start-up (`Program.cs:51`).
+**Verified:** a single-process modular monolith. One ASP.NET Core 10 process (`src/Chroniq.Api/Program.cs`) hosts the REST API, the scheduled `SynchronizationWorker` and the built React SPA (`UseStaticFiles` + `MapFallbackToFile("index.html")`, `Program.cs:67-73`). State lives in one SQLite file (`data/chroniq.db`, `Program.cs:19`); the product output is a folder of Markdown files under configurable export roots. EF Core migrations are applied automatically at start-up (`Program.cs:51`).
 
 Layering (Verified by `ProjectReference`s): `Domain` ← `Application` ← `Infrastructure`, `Worker` ← `Api`. Application defines ports (`IAppDbContext`, `IGranolaApiClient`, `IFirefliesApiClient`, `IAiClassifier`, `ISecretProvider`, `ICredentialStore`, `ISettingsService`, `ISyncLease`, `IShellLauncher`, `IClock`); Infrastructure implements them.
 
@@ -15,23 +15,23 @@ Layering (Verified by `ProjectReference`s): `Domain` ← `Application` ← `Infr
 
 | Component | Responsibility | Depends on | Entry point / evidence |
 |---|---|---|---|
-| API host | Composition root, middleware, controllers, SPA hosting, start-up migration | Application, Infrastructure, Worker | `src/GranolaPI.Api/Program.cs` |
-| `RequestProtectionMiddleware` | Correlation ID, security headers, `no-store` on `/api`, loopback-only / bearer token, CSRF header | `IConfiguration` | `src/GranolaPI.Api/Middleware/Middleware.cs:60-112` |
-| `ApiExceptionHandler` | Maps exceptions to RFC 7807 problem details with category + correlation ID | — | `src/GranolaPI.Api/Middleware/Middleware.cs:14-50` |
-| `SyncCoordinator` (singleton) | Starts a run on a background task, one at a time per process, supports cancel | `SyncEngine`, `SyncProgress` | `src/GranolaPI.Application/Synchronization/SyncCoordinator.cs` |
-| `SyncEngine` (singleton) | Orchestrates a run: lease, discovery (Granola cursor paging, Fireflies skip paging), parallel processing (1–8), run items, project context, checkpoints | `ISyncLease`, scoped services | `src/GranolaPI.Application/Synchronization/SyncEngine.cs` |
-| `MeetingProcessor` (scoped per meeting) | fetch → persist → classify → export → record failure/backoff | API clients, `ClassificationService`, `MeetingExporter` | `src/GranolaPI.Application/Synchronization/MeetingProcessor.cs` |
-| `ClassificationService` / `ClassificationEngine` | Deterministic tiered rule matching; optional AI tier; manual override | `IAiClassifier` | `src/GranolaPI.Application/Classification/` |
-| `MeetingExporter` | Writes notes/transcript Markdown atomically, stable file names, edit/conflict detection, moves on reassignment | `ExportLayout`, `AtomicFile`, `MarkdownRenderer` | `src/GranolaPI.Application/Export/MeetingExporter.cs` |
-| `ProjectContextService` | Generates `PROJECT_CONTEXT.md`, project `README.md` (once) and `ReviewQueue.md` | export layout | `src/GranolaPI.Application/Export/ProjectContextService.cs` |
-| `ExportBrowserService` | Read-only tree/file browsing under roots, open in OS shell, path validation, folder picker, root migration | `IShellLauncher` | `src/GranolaPI.Application/Export/ExportBrowserService.cs` |
-| `SynchronizationWorker` | Every 30 s: if auto-sync enabled, a Granola key exists and the interval has elapsed, start an incremental run; marks interrupted runs at start-up | `SyncCoordinator` | `src/GranolaPI.Worker/SynchronizationWorker.cs` |
-| `GranolaApiClient` | Granola public REST API client with throttle, retry, backoff | `HttpClient`, `ISecretProvider` | `src/GranolaPI.Infrastructure/Granola/GranolaApiClient.cs` |
-| `FirefliesApiClient` | Fireflies GraphQL client with throttle, retry, backoff | `HttpClient`, `ISecretProvider` | `src/GranolaPI.Infrastructure/Fireflies/FirefliesApiClient.cs` |
-| `AnthropicAiClassifier` | Optional Claude call with JSON-schema output limited to known project IDs | Anthropic SDK | `src/GranolaPI.Infrastructure/Ai/AnthropicAiClassifier.cs` |
-| `AppDbContext` + `SettingsService` + `SqlSyncLease` | Persistence, JSON settings sections, cross-process sync lease | EF Core SQLite | `src/GranolaPI.Infrastructure/Persistence/` |
-| Credential stores + `SecretProvider` | Windows Credential Manager or read-only (env vars) | advapi32, `IConfiguration` | `src/GranolaPI.Infrastructure/Security/CredentialStores.cs` |
-| `FileLoggerProvider` | JSON-lines daily log files with secret redaction and retention | — | `src/GranolaPI.Infrastructure/Logging/FileLogger.cs` |
+| API host | Composition root, middleware, controllers, SPA hosting, start-up migration | Application, Infrastructure, Worker | `src/Chroniq.Api/Program.cs` |
+| `RequestProtectionMiddleware` | Correlation ID, security headers, `no-store` on `/api`, loopback-only / bearer token, CSRF header | `IConfiguration` | `src/Chroniq.Api/Middleware/Middleware.cs:60-112` |
+| `ApiExceptionHandler` | Maps exceptions to RFC 7807 problem details with category + correlation ID | — | `src/Chroniq.Api/Middleware/Middleware.cs:14-50` |
+| `SyncCoordinator` (singleton) | Starts a run on a background task, one at a time per process, supports cancel | `SyncEngine`, `SyncProgress` | `src/Chroniq.Application/Synchronization/SyncCoordinator.cs` |
+| `SyncEngine` (singleton) | Orchestrates a run: lease, discovery (Granola cursor paging, Fireflies skip paging), parallel processing (1–8), run items, project context, checkpoints | `ISyncLease`, scoped services | `src/Chroniq.Application/Synchronization/SyncEngine.cs` |
+| `MeetingProcessor` (scoped per meeting) | fetch → persist → classify → export → record failure/backoff | API clients, `ClassificationService`, `MeetingExporter` | `src/Chroniq.Application/Synchronization/MeetingProcessor.cs` |
+| `ClassificationService` / `ClassificationEngine` | Deterministic tiered rule matching; optional AI tier; manual override | `IAiClassifier` | `src/Chroniq.Application/Classification/` |
+| `MeetingExporter` | Writes notes/transcript Markdown atomically, stable file names, edit/conflict detection, moves on reassignment | `ExportLayout`, `AtomicFile`, `MarkdownRenderer` | `src/Chroniq.Application/Export/MeetingExporter.cs` |
+| `ProjectContextService` | Generates `PROJECT_CONTEXT.md`, project `README.md` (once) and `ReviewQueue.md` | export layout | `src/Chroniq.Application/Export/ProjectContextService.cs` |
+| `ExportBrowserService` | Read-only tree/file browsing under roots, open in OS shell, path validation, folder picker, root migration | `IShellLauncher` | `src/Chroniq.Application/Export/ExportBrowserService.cs` |
+| `SynchronizationWorker` | Every 30 s: if auto-sync enabled, a Granola key exists and the interval has elapsed, start an incremental run; marks interrupted runs at start-up | `SyncCoordinator` | `src/Chroniq.Worker/SynchronizationWorker.cs` |
+| `GranolaApiClient` | Granola public REST API client with throttle, retry, backoff | `HttpClient`, `ISecretProvider` | `src/Chroniq.Infrastructure/Granola/GranolaApiClient.cs` |
+| `FirefliesApiClient` | Fireflies GraphQL client with throttle, retry, backoff | `HttpClient`, `ISecretProvider` | `src/Chroniq.Infrastructure/Fireflies/FirefliesApiClient.cs` |
+| `AnthropicAiClassifier` | Optional Claude call with JSON-schema output limited to known project IDs | Anthropic SDK | `src/Chroniq.Infrastructure/Ai/AnthropicAiClassifier.cs` |
+| `AppDbContext` + `SettingsService` + `SqlSyncLease` | Persistence, JSON settings sections, cross-process sync lease | EF Core SQLite | `src/Chroniq.Infrastructure/Persistence/` |
+| Credential stores + `SecretProvider` | Windows Credential Manager or read-only (env vars) | advapi32, `IConfiguration` | `src/Chroniq.Infrastructure/Security/CredentialStores.cs` |
+| `FileLoggerProvider` | JSON-lines daily log files with secret redaction and retention | — | `src/Chroniq.Infrastructure/Logging/FileLogger.cs` |
 | React SPA | Dashboard, meetings, projects/clients, unassigned review, sync history, export browser, settings | `/api` | `frontend/src/App.tsx` |
 
 ## Key flows
@@ -102,7 +102,7 @@ flowchart LR
     A -- yes --> T{Security:ApiToken set?}
     T -- yes --> B{Authorization == Bearer token?} -- no --> U[401]
     T -- no --> L{Loopback caller or AllowRemoteWithoutToken?} -- no --> F[403]
-    B -- yes --> S{GET/HEAD/OPTIONS or X-GPI-Request: 1?}
+    B -- yes --> S{GET/HEAD/OPTIONS or X-Chroniq-Request: 1?}
     L -- yes --> S
     S -- no --> F2[403]
     S -- yes --> C[Controller]
@@ -127,7 +127,7 @@ Evidence: `Middleware.cs:64-105`; `AllowedHosts` `localhost;127.0.0.1` (`appsett
 
 ## Architectural constraints
 
-- Single writer per database: the sync lease (`SqlSyncLease`) protects against two processes syncing at once; SQLite is the only configured provider (`src/GranolaPI.Infrastructure/DependencyInjection.cs:26`), although the schema avoids SQLite-only features (`AppDbContext.cs:9-12`).
+- Single writer per database: the sync lease (`SqlSyncLease`) protects against two processes syncing at once; SQLite is the only configured provider (`src/Chroniq.Infrastructure/DependencyInjection.cs:26`), although the schema avoids SQLite-only features (`AppDbContext.cs:9-12`).
 - Desktop features (Credential Manager writes, open in Explorer, folder picker usefulness) only work when the process runs on the user's machine (`Dockerfile` comment, `ShellLauncher.IsSupported`).
 - No user accounts or roles: one user per installation (Verified: no authentication/authorization framework registered in `Program.cs`).
 
@@ -137,7 +137,7 @@ Evidence: `Middleware.cs:64-105`; `AllowedHosts` `localhost;127.0.0.1` (`appsett
 |---|---|---|---|
 | Source-specific naming in a now multi-source model (`GranolaNoteId`, `GranolaApiException`, `GranolaNoteFetch` reused for Fireflies) | `Entities.cs:64`, `FirefliesModels.cs:116`, `MeetingProcessor.cs:58-60` | Confusing for contributors; unique index ignores `Source` (RF-006) | TD-003 |
 | Committed compiler output shadows frontend sources | `frontend/src/**/*.js`, Vite resolution order | UI edits silently ignored; stale bundle shipped | RF-001, PIDA-001 |
-| Duplicate singleton registration of `LogSettingsState` | `Program.cs:22`, `src/GranolaPI.Infrastructure/DependencyInjection.cs:51` | Logging settings saved in the UI do not reach the logger until restart | RF-003, PIDA-003 |
+| Duplicate singleton registration of `LogSettingsState` | `Program.cs:22`, `src/Chroniq.Infrastructure/DependencyInjection.cs:51` | Logging settings saved in the UI do not reach the logger until restart | RF-003, PIDA-003 |
 | Legacy Node CLI duplicates the Granola client and matching logic | `tools/node-cli/src/` | Divergent behaviour if anyone still uses it | TD-002, Q-003 |
 
 ## Architecture decisions

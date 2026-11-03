@@ -1,6 +1,6 @@
 {
   "export": {
-    "rootDirectory": "./GranolaProjectKnowledge",
+    "rootDirectory": "./ChroniqKnowledge",
     "notesRootDirectory": null,
     "transcriptsRootDirectory": null,
     "projectDirectoryTemplate": "Projects/{ProjectSlug}",

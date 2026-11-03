@@ -10,7 +10,7 @@ RUN npm run build
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS backend
 WORKDIR /src
 COPY . .
-RUN dotnet publish src/GranolaPI.Api/GranolaPI.Api.csproj -c Release -o /app
+RUN dotnet publish src/Chroniq.Api/Chroniq.Api.csproj -c Release -o /app
 
 FROM mcr.microsoft.com/dotnet/aspnet:10.0
 WORKDIR /app
@@ -23,4 +23,4 @@ ENV ASPNETCORE_URLS=http://0.0.0.0:8080 \
 VOLUME ["/data"]
 EXPOSE 8080
 USER $APP_UID
-ENTRYPOINT ["dotnet", "GranolaPI.Api.dll"]
+ENTRYPOINT ["dotnet", "Chroniq.Api.dll"]

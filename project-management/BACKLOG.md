@@ -42,10 +42,10 @@ Seeded by the project audit of 2026-10-28. Every task is `Proposed` until the ow
 - **Status:** Proposed
 - **Priority:** P1
 - **Outcome:** Changing the log level, folder or retention in Settings takes effect immediately.
-- **Scope:** Remove `services.AddSingleton<LogSettingsState>()` from `src/GranolaPI.Infrastructure/DependencyInjection.cs` (the API registers the instance), or move the single registration into Infrastructure; add an integration test.
+- **Scope:** Remove `services.AddSingleton<LogSettingsState>()` from `src/Chroniq.Infrastructure/DependencyInjection.cs` (the API registers the instance), or move the single registration into Infrastructure; add an integration test.
 - **Out of scope:** Logger redesign.
 - **Dependencies:** none.
-- **Likely components/files:** `src/GranolaPI.Infrastructure/DependencyInjection.cs:51`, `src/GranolaPI.Api/Program.cs:21-23`, `tests/GranolaPI.IntegrationTests/`.
+- **Likely components/files:** `src/Chroniq.Infrastructure/DependencyInjection.cs:51`, `src/Chroniq.Api/Program.cs:21-23`, `tests/Chroniq.IntegrationTests/`.
 - **Acceptance criteria:**
   - [ ] AC-1: Resolving `LogSettingsState` from DI returns the same instance the `FileLoggerProvider` uses.
   - [ ] AC-2: After `PUT /api/settings` with `logging.minimumLevel = "Warning"`, Information messages are no longer written.
@@ -61,7 +61,7 @@ Seeded by the project audit of 2026-10-28. Every task is `Proposed` until the ow
 - **Scope:** Change the key check in `SynchronizationWorker.MaybeStartAsync` to accept any source secret (WhisperAI added 2026-11-02, PIDA-019); update its summary comment.
 - **Out of scope:** Per-source schedules.
 - **Dependencies:** Q-004; PIDA-008 makes it testable.
-- **Likely components/files:** `src/GranolaPI.Worker/SynchronizationWorker.cs:64`.
+- **Likely components/files:** `src/Chroniq.Worker/SynchronizationWorker.cs:64`.
 - **Acceptance criteria:**
   - [ ] AC-1: With only `FIREFLIES_API_KEY` set and auto-sync on, a scheduled run starts when due.
   - [ ] AC-2: With no key, no run starts.
@@ -77,7 +77,7 @@ Seeded by the project audit of 2026-10-28. Every task is `Proposed` until the ow
 - **Scope:** Integration tests: token configured → missing/wrong token 401, right token 2xx, `/api/health` open; no token → non-loopback caller 403, `AllowRemoteWithoutToken` allows; CSRF still required with a token.
 - **Out of scope:** Changing behaviour.
 - **Dependencies:** none.
-- **Likely components/files:** `tests/GranolaPI.IntegrationTests/ApiIntegrationTests.cs`, `TestHost.cs` (configurable settings; simulate remote IP via a test middleware or `TestServer` `HttpContext.Connection.RemoteIpAddress`).
+- **Likely components/files:** `tests/Chroniq.IntegrationTests/ApiIntegrationTests.cs`, `TestHost.cs` (configurable settings; simulate remote IP via a test middleware or `TestServer` `HttpContext.Connection.RemoteIpAddress`).
 - **Acceptance criteria:**
   - [ ] AC-1: Tests cover each branch of `Middleware.cs:76-102`.
 - **Test plan:** `dotnet test`.
@@ -92,7 +92,7 @@ Seeded by the project audit of 2026-10-28. Every task is `Proposed` until the ow
 - **Scope:** Unit tests for `AnthropicAiClassifier.Parse` (unknown ID → null, null ID → null, malformed JSON → null, evidence capped at 10, explanation truncated at 500) and `Schema`; service test with a fake `IAiClassifier` (only for Unassigned, non-manual meetings; exceptions swallowed). Optionally add a timeout around the call.
 - **Out of scope:** Live API calls.
 - **Dependencies:** none.
-- **Likely components/files:** `src/GranolaPI.Infrastructure/Ai/AnthropicAiClassifier.cs`, `src/GranolaPI.Application/Classification/ClassificationService.cs`, `tests/GranolaPI.UnitTests/Classification/`.
+- **Likely components/files:** `src/Chroniq.Infrastructure/Ai/AnthropicAiClassifier.cs`, `src/Chroniq.Application/Classification/ClassificationService.cs`, `tests/Chroniq.UnitTests/Classification/`.
 - **Acceptance criteria:**
   - [ ] AC-1: Each `Parse` rule has a test.
   - [ ] AC-2: A failing classifier never blocks deterministic classification (tested).
@@ -107,7 +107,7 @@ Seeded by the project audit of 2026-10-28. Every task is `Proposed` until the ow
 - **Outcome:** Moving the export folder is proven safe.
 - **Scope:** Integration tests for `POST /api/exports/migrate-root`: requires confirm; copies files; skips identical; keeps different files with a warning; rejects nested roots; switches settings; leaves the old root untouched.
 - **Dependencies:** none.
-- **Likely components/files:** `ExportBrowserService.MigrateRootAsync`, `tests/GranolaPI.IntegrationTests/`.
+- **Likely components/files:** `ExportBrowserService.MigrateRootAsync`, `tests/Chroniq.IntegrationTests/`.
 - **Acceptance criteria:**
   - [ ] AC-1: All listed behaviours have assertions.
 - **Test plan:** `dotnet test`.
@@ -121,7 +121,7 @@ Seeded by the project audit of 2026-10-28. Every task is `Proposed` until the ow
 - **Outcome:** Scheduling rules (enabled flag, interval minimum 5, last-run calculation, key presence) are covered.
 - **Scope:** Inject `IClock` into `SynchronizationWorker` (replace `DateTime.UtcNow`); extract `MaybeStartAsync` decision into a testable method; add tests.
 - **Dependencies:** none.
-- **Likely components/files:** `src/GranolaPI.Worker/SynchronizationWorker.cs`, new worker tests.
+- **Likely components/files:** `src/Chroniq.Worker/SynchronizationWorker.cs`, new worker tests.
 - **Acceptance criteria:**
   - [ ] AC-1: Tests for due / not due / disabled / no key.
 - **Test plan:** `dotnet test`.
@@ -176,7 +176,7 @@ Seeded by the project audit of 2026-10-28. Every task is `Proposed` until the ow
 - **Priority:** P3
 - **Outcome:** No API key from any provider can reach a log file.
 - **Scope:** Extend `SecretRedactor` with the resolved secret values (or a Fireflies pattern); test.
-- **Likely components/files:** `src/GranolaPI.Infrastructure/Logging/FileLogger.cs`.
+- **Likely components/files:** `src/Chroniq.Infrastructure/Logging/FileLogger.cs`.
 - **Acceptance criteria:**
   - [ ] AC-1: A log message containing the Fireflies key is written with `[REDACTED]` (test).
 - **Test plan:** Unit test.
@@ -247,7 +247,7 @@ Seeded by the project audit of 2026-10-28. Every task is `Proposed` until the ow
 - **Scope:** `IWhisperAiApiClient` + client (raw `Authorization` header, `GET /transcript` with `before_id` paging, `GET /transcript/{id}`, `/sentences` fallback); mapper; `MeetingSource.WhisperAi`; sync discovery with its own checkpoint and a 1-day look-back; credential endpoints + test-connection; Markdown front matter; Settings card, badge and filter labels; `wai_` log redaction; docs.
 - **Out of scope:** Uploading audio or creating transcripts; translation; realtime; a configurable look-back setting; PIDA-004 (scheduled sync for non-Granola-only setups).
 - **Dependencies:** None. No DB migration (`Meetings.Source` is a string column).
-- **Likely components/files:** `src/GranolaPI.Application/WhisperAi/`, `src/GranolaPI.Infrastructure/WhisperAi/`, `SyncEngine.cs`, `MeetingProcessor.cs`, `CredentialService.cs`, `MarkdownRenderer.cs`, `SystemControllers.cs`, `frontend/src/pages/SettingsPage.tsx`.
+- **Likely components/files:** `src/Chroniq.Application/WhisperAi/`, `src/Chroniq.Infrastructure/WhisperAi/`, `SyncEngine.cs`, `MeetingProcessor.cs`, `CredentialService.cs`, `MarkdownRenderer.cs`, `SystemControllers.cs`, `frontend/src/pages/SettingsPage.tsx`.
 - **Acceptance criteria:**
   - [x] AC-1: Key stored, masked, validated and restored on rejection like the Fireflies key (`WhisperAi_credentials_are_masked_and_tested_separately`, `pages.test.tsx`).
   - [x] AC-2: Completed transcripts exported across pages with `source: whisperai`; queued/processing/error ones skipped (`Completed_transcripts_are_exported_across_pages…`).
@@ -262,7 +262,7 @@ Seeded by the project audit of 2026-10-28. Every task is `Proposed` until the ow
 - **Status:** Proposed
 - **Priority:** P3
 - **Outcome:** Builds are identifiable and database upgrades are reversible.
-- **Scope:** Add `<Version>` to `Directory.Build.props`, tag releases; copy `granola-pi.db` to a timestamped backup before applying pending migrations at start-up.
+- **Scope:** Add `<Version>` to `Directory.Build.props`, tag releases; copy `chroniq.db` to a timestamped backup before applying pending migrations at start-up.
 - **Dependencies:** Q-006.
 - **Likely components/files:** `Directory.Build.props`, `Program.cs:48-51`.
 - **Acceptance criteria:**

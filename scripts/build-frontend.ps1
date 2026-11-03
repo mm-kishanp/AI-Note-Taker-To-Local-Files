@@ -5,7 +5,7 @@ $ErrorActionPreference = 'Stop'
 
 $repo = Split-Path -Parent $PSScriptRoot
 $frontend = Join-Path $repo 'frontend'
-$wwwroot = Join-Path $repo 'src/GranolaPI.Api/wwwroot'
+$wwwroot = Join-Path $repo 'src/Chroniq.Api/wwwroot'
 
 Push-Location $frontend
 try {

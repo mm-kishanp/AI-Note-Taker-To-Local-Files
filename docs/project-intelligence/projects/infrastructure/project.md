@@ -1,9 +1,9 @@
-# GranolaPI.Infrastructure (adapters)
+# Chroniq.Infrastructure (adapters)
 
 Last reviewed: 2026-10-28
 
 - Type: Library
-- Location: `src/GranolaPI.Infrastructure/`
+- Location: `src/Chroniq.Infrastructure/`
 - Status: Active
 - Confidence: High
 - Part of: [project.md](../../project.md)
@@ -45,7 +45,7 @@ Implementations of the Application ports: SQLite persistence and migrations, the
 
 | Depends on | Kind | Why | Evidence |
 | --- | --- | --- | --- |
-| GranolaPI.Application, GranolaPI.Domain | sub-projects | Ports, entities | csproj |
+| Chroniq.Application, Chroniq.Domain | sub-projects | Ports, entities | csproj |
 | Granola API, Fireflies API, Anthropic API | external | INT-001–003 | [integrations.md](../../integrations.md) |
 | Windows Credential Manager | OS | INT-004 | `CredentialStores.cs` |
 

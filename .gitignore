@@ -13,6 +13,7 @@ data/
 *.db-shm
 *.db-wal
 logs/
+ChroniqKnowledge/
 GranolaProjectKnowledge/
 
 # Frontend
@@ -41,7 +42,7 @@ Thumbs.db
 .e2e/
 
 # Built UI (produced by scripts/build-frontend.ps1)
-src/GranolaPI.Api/wwwroot/
+src/Chroniq.Api/wwwroot/
 
 # Background install (produced by setup.bat)
 publish/

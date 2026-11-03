@@ -53,7 +53,7 @@ None stored except the API token in `sessionStorage` (`gpi.apiToken`).
 
 ## Configuration
 
-`GPI_BACKEND_URL` (dev proxy target), `GPI_E2E_URL` (Playwright).
+`CHRONIQ_BACKEND_URL` (dev proxy target), `CHRONIQ_E2E_URL` (Playwright).
 
 ## Ownership and conventions
 

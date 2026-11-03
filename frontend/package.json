@@ -1,9 +1,9 @@
 {
-  "name": "granola-pi-frontend",
+  "name": "chroniq-frontend",
   "private": true,
   "version": "1.0.0",
   "type": "module",
-  "description": "React frontend for Granola Project Intelligence Sync",
+  "description": "React frontend for CHRONIQ",
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit -p tsconfig.json && vite build",

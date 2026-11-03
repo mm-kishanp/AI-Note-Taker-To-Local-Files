@@ -1,6 +1,6 @@
 # Troubleshooting
 
-Each failure is recorded with an error category, shown on the meeting page and in Sync History. The full details are in `data/logs/granola-pi-YYYYMMDD.log` (JSON lines). Search the log for the correlation ID shown in an error message.
+Each failure is recorded with an error category, shown on the meeting page and in Sync History. The full details are in `data/logs/chroniq-YYYYMMDD.log` (JSON lines). Search the log for the correlation ID shown in an error message.
 
 | Symptom / category | Cause | Fix |
 |---|---|---|
@@ -22,7 +22,7 @@ Each failure is recorded with an error category, shown on the meeting page and i
 | **Configuration**: "Export settings are invalid" | A template is invalid or a root is missing | Fix it under Settings → Export. Validation messages name the field. |
 | "A synchronization is already running" (409) | A run is in progress, or another process holds the lease | Wait, or cancel it from the header. A stale lease from a crashed process expires after 10 minutes. |
 | Run shows **Interrupted** | The app stopped mid-run | Nothing to do. Pending meetings are retried on the next run. |
-| UI shows 403 "Missing X-GPI-Request header" | A custom script is calling the API | Send the `X-GPI-Request: 1` header on POST/PUT/DELETE. |
+| UI shows 403 "Missing X-Chroniq-Request header" | A custom script is calling the API | Send the `X-Chroniq-Request: 1` header on POST/PUT/DELETE. |
 | UI shows 403 "Remote access is disabled" | The app was opened from another machine | Use `127.0.0.1`, or configure `Security:ApiToken` and HTTPS. |
 | Startup error about the database | The database file is locked or corrupt | Stop other instances. Restore from backup (below). |
 
@@ -31,13 +31,13 @@ Each failure is recorded with an error category, shown on the meeting page and i
 **What to back up:**
 
 1. **Export roots.** These are the Markdown knowledge base. Copy them, or better, keep them in a Git repository.
-2. **`data/granola-pi.db`.** This holds projects, rules, settings, manual assignments and sync history. Stop the app first, or copy it together with its `-wal`/`-shm` files.
+2. **`data/chroniq.db`.** This holds projects, rules, settings, manual assignments and sync history. Stop the app first, or copy it together with its `-wal`/`-shm` files.
 3. **Configuration.** Use Projects → Export configuration (JSON) as a portable copy of projects, clients and rules.
 4. API keys are **not** included. Keep them in your password manager.
 
 **Restore on a new machine:**
 
-1. Install the app and copy `data/granola-pi.db` and the export roots.
+1. Install the app and copy `data/chroniq.db` and the export roots.
 2. If paths differ, update Settings → Export. Records are stored relative to the roots, so moving the roots is safe.
 3. Re-enter the Granola key.
 4. Run **Sync → Reconcile files**.

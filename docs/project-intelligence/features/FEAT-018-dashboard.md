@@ -6,7 +6,7 @@ Last reviewed: 2026-10-28
 - Confidence: Medium
 - Inventory row: [feature-inventory.md](../feature-inventory.md)
 - Clients: Not applicable
-- Related: `DashboardService` (`src/GranolaPI.Application/Meetings/ReviewAndDashboardServices.cs`)
+- Related: `DashboardService` (`src/Chroniq.Application/Meetings/ReviewAndDashboardServices.cs`)
 
 ## User outcome
 

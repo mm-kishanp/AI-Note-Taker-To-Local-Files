@@ -45,7 +45,7 @@ Writes `.md` files under the configured roots (INT-005). Edit protection: FEAT-0
 
 ## Configuration and feature flags
 
-`export.rootDirectory` (`./GranolaProjectKnowledge`), `notesRootDirectory`, `transcriptsRootDirectory`, `projectDirectoryTemplate`, `notesDirectoryTemplate`, `transcriptsDirectoryTemplate`, `unassigned*/shared*Directory`, `filenameTemplate`, `exportNotes`, `exportTranscripts`, `includeAttachmentLinks`, `conflictPolicy`, `moveFilesOnReassignment` (`AppSettings.cs:11-31`); per-project `NotesFolderPath`/`TranscriptFolderPath` overrides.
+`export.rootDirectory` (`./ChroniqKnowledge`), `notesRootDirectory`, `transcriptsRootDirectory`, `projectDirectoryTemplate`, `notesDirectoryTemplate`, `transcriptsDirectoryTemplate`, `unassigned*/shared*Directory`, `filenameTemplate`, `exportNotes`, `exportTranscripts`, `includeAttachmentLinks`, `conflictPolicy`, `moveFilesOnReassignment` (`AppSettings.cs:11-31`); per-project `NotesFolderPath`/`TranscriptFolderPath` overrides.
 
 ## Client availability
 

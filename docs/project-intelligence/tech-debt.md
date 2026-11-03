@@ -13,8 +13,8 @@ The code is young (first commit 2026-10-27) and clean: no TODOs, current runtime
 | Area / path | Why it is a hotspot | Related debt | Evidence |
 | --- | --- | --- | --- |
 | `frontend/src/` | Committed compiler output doubles every file; two largest UI components 582–646 lines | TD-004, RF-001 | sub-audit |
-| `src/GranolaPI.Application/Synchronization/` + `src/GranolaPI.Infrastructure/{Granola,Fireflies}/` | Core flow; most recent feature work (Fireflies) touched it; duplicated client retry logic | TD-003, TD-004 | `git log --stat` |
-| `src/GranolaPI.Application/Classification/ClassificationEngine.cs` | Largest C# file (379 lines), central business rules | — | line counts |
+| `src/Chroniq.Application/Synchronization/` + `src/Chroniq.Infrastructure/{Granola,Fireflies}/` | Core flow; most recent feature work (Fireflies) touched it; duplicated client retry logic | TD-003, TD-004 | `git log --stat` |
+| `src/Chroniq.Application/Classification/ClassificationEngine.cs` | Largest C# file (379 lines), central business rules | — | line counts |
 
 ## Debt register
 

@@ -1,7 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 
 // Read-only smoke test: every page renders without console errors or uncaught exceptions.
-const shots = process.env.GPI_E2E_SCREENSHOTS;
+const shots = process.env.CHRONIQ_E2E_SCREENSHOTS;
 
 const pages: { path: string; heading: RegExp }[] = [
   { path: '/', heading: /dashboard/i },

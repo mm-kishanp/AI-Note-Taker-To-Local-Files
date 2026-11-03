@@ -9,17 +9,17 @@ No ADR folder existed before the 2026-10-28 audit. ADR-001 – ADR-007 record pr
 - **Decision:** One ASP.NET Core 10 process hosting API, BackgroundService worker and SPA; projects Domain ← Application ← Infrastructure/Worker ← Api.
 - **Alternatives:** Separate worker service; desktop framework (WPF/Electron); Node-only (the earlier CLI).
 - **Consequences:** Simple to run and deploy; one process to secure; scheduler tied to the API's lifetime.
-- **Evidence:** `GranolaProjectIntelligence.sln`, csproj references, `Program.cs`, `docs/ARCHITECTURE.md`.
+- **Evidence:** `Chroniq.sln`, csproj references, `Program.cs`, `docs/ARCHITECTURE.md`.
 - **Revisit when:** Multi-user or multi-instance hosting is needed.
 
 ## ADR-002 — SQLite via EF Core for state; Markdown files as the product output
 - **Date:** 2026-10-28
 - **Status:** Accepted (pre-existing, inferred from code)
 - **Context:** Local-first; output must be portable and usable without the app.
-- **Decision:** EF Core 10 with SQLite (`data/granola-pi.db`), migrations applied at start-up; meetings exported as Markdown with self-describing front matter.
+- **Decision:** EF Core 10 with SQLite (`data/chroniq.db`), migrations applied at start-up; meetings exported as Markdown with self-describing front matter.
 - **Alternatives:** Files only (the earlier CLI's JSON state); a server database.
 - **Consequences:** Zero-setup storage; DB and Markdown must be backed up together; schema kept provider-neutral.
-- **Evidence:** `src/GranolaPI.Infrastructure/DependencyInjection.cs:26`, `AppDbContext.cs:9-12`, `Program.cs:51`.
+- **Evidence:** `src/Chroniq.Infrastructure/DependencyInjection.cs:26`, `AppDbContext.cs:9-12`, `Program.cs:51`.
 - **Revisit when:** Multiple processes/hosts must share state.
 
 ## ADR-003 — Local-first request protection instead of user accounts
@@ -90,5 +90,15 @@ No ADR folder existed before the 2026-10-28 audit. ADR-001 – ADR-007 record pr
 - **Consequences:** Classification of WhisperAI transcripts relies on keyword and AI rules only. No DB migration.
 - **Evidence:** PIDA-019, FEAT-023, INT-006.
 - **Revisit when:** A fourth source is added, or WhisperAI adds metadata (title, participants).
+
+## ADR-011 — Rename the product to CHRONIQ, keeping legacy names readable
+- **Date:** 2026-11-03
+- **Status:** Accepted (requested by the user)
+- **Context:** The product was called "Granola Project Intelligence Sync" (code prefix `GranolaPI`, abbreviation GPI). "Granola" is also the name of the third-party meeting service the app syncs from, which made the two easy to confuse.
+- **Decision:** The display name is CHRONIQ. The code prefix is `Chroniq.*` (solution `Chroniq.sln`, projects, namespaces), and there is new on-disk and wire naming: `data/chroniq.db`, `ChroniqKnowledge/`, credential prefix `Chroniq:`, `X-Chroniq-Request`, `chroniq:generated` markers, `.chroniq-tmp`, `chroniq-*.log`, scheduled task `CHRONIQ`, `CHRONIQ_*` env vars. The Granola *integration* (GranolaApiClient, `GRANOLA_API_KEY`, Granola settings) keeps its name, and so does the legacy Node CLI `tools/node-cli/granola-sync.js`.
+- **Backward compatibility:** These old names are still read: `GranolaProjectIntelligence:` credentials (read and deleted, `CredentialStores.cs`), `data/granola-pi.db` when no `chroniq.db` exists (`Program.cs`), `./GranolaProjectKnowledge` when export settings were never saved and only that folder exists (`Program.cs`), the `X-GPI-Request` header (`Middleware.cs`), `granola-pi:generated` markers (upgraded on rewrite), `.gpi-tmp` files (swept), `granola-pi-*.log` (pruned), and `GPI_API_TOKEN` in compose. `setup.bat` removes the old `Granola PI` task and Startup entry. The compose volume keeps its name `granola-pi-state`.
+- **Not migrated:** the dev-only env vars `GPI_BACKEND_URL`, `GPI_E2E_URL`, `GPI_E2E_SCREENSHOTS` and `GPI_URL`. Docker users must rename the host folder `./GranolaProjectKnowledge` to `./ChroniqKnowledge`.
+- **Evidence/tests:** `Legacy_csrf_header_from_before_the_rename_is_still_accepted`, `Cleanup_also_removes_temp_files_from_before_the_rename`, `Project_context_upgrades_markers_from_before_the_rename`.
+- **Revisit when:** All known installs have run a CHRONIQ build once. The legacy fallbacks can then be removed.
 
 Record meaningful decisions; do not create an ADR for every small implementation choice.

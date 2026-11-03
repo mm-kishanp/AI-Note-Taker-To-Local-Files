@@ -78,7 +78,7 @@ export function AppLayout() {
           <Group gap="sm" wrap="nowrap">
             <Burger opened={opened} onClick={toggle} hiddenFrom="sm" size="sm" aria-label="Toggle navigation" />
             <Text fw={700} size="lg" component={Link} to="/" style={{ textDecoration: 'none', color: 'inherit', whiteSpace: 'nowrap' }}>
-              Granola PI Sync
+              CHRONIQ
             </Text>
           </Group>
           <Group gap="sm" wrap="nowrap">
@@ -136,7 +136,7 @@ export function AppLayout() {
         )}
         {health.error && (
           <Alert color="red" icon={<IconAlertTriangle size={18} />} title="Cannot reach the backend" mb="md" role="alert">
-            The Granola Project Intelligence service is not responding. Data shown may be out of date.
+            The CHRONIQ service is not responding. Data shown may be out of date.
           </Alert>
         )}
         <Outlet />

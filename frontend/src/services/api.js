@@ -1,5 +1,5 @@
 export const API_BASE = '/api';
-export const CSRF_HEADER = 'X-GPI-Request';
+export const CSRF_HEADER = 'X-Chroniq-Request';
 export const API_TOKEN_STORAGE_KEY = 'gpi.apiToken';
 /** Window event dispatched when the server answers 401 (remote deployment requires an API token). */
 export const AUTH_REQUIRED_EVENT = 'gpi:auth-required';
@@ -153,7 +153,7 @@ export async function request(method, path, opts = {}) {
         throw new ApiError({
             status: 0,
             title: 'Cannot reach the backend',
-            detail: 'The Granola Project Intelligence service did not respond. Make sure it is running.',
+            detail: 'The CHRONIQ service did not respond. Make sure it is running.',
             category: 'Network',
         });
     }

@@ -11,9 +11,9 @@ Last reviewed: 2026-10-28
 | --- | --- | --- | --- |
 | Prerequisites | .NET SDK 10.0, Node.js 22+ (frontend only) | No (Documented, `README.md:48-53`) | `run.bat` checks for `dotnet` and `npm` |
 | Restore tools | `dotnet tool restore` | No | Installs `dotnet-ef` 10.0.5 |
-| Build UI into the API | `./scripts/build-frontend.ps1` | No | `npm ci` + `npm run build`, then replaces `src/GranolaPI.Api/wwwroot` |
-| Run (Development) | `$env:ASPNETCORE_ENVIRONMENT="Development"; dotnet run --project src/GranolaPI.Api` | No | `http://127.0.0.1:5080`, Swagger at `/swagger`, base directory = repo root (`appsettings.Development.json`) |
-| Run UI with hot reload | `cd frontend; npm install; npm run dev` | No | `http://localhost:5173`, proxies `/api` to `GPI_BACKEND_URL` (default `http://127.0.0.1:5080`) |
+| Build UI into the API | `./scripts/build-frontend.ps1` | No | `npm ci` + `npm run build`, then replaces `src/Chroniq.Api/wwwroot` |
+| Run (Development) | `$env:ASPNETCORE_ENVIRONMENT="Development"; dotnet run --project src/Chroniq.Api` | No | `http://127.0.0.1:5080`, Swagger at `/swagger`, base directory = repo root (`appsettings.Development.json`) |
+| Run UI with hot reload | `cd frontend; npm install; npm run dev` | No | `http://localhost:5173`, proxies `/api` to `CHRONIQ_BACKEND_URL` (default `http://127.0.0.1:5080`) |
 | One-click desktop | `run.bat` / `run.bat dev` / `run.bat rebuild` / `run.bat test`; `stop.bat` | No | Force-kills processes on ports 5080 (and 5173 in `stop.bat`), see RF-010 |
 | Secrets | Enter keys in Settings → Connections, or set `GRANOLA_API_KEY` / `FIREFLIES_API_KEY` / `ANTHROPIC_API_KEY` | No | Never commit values |
 
@@ -21,9 +21,9 @@ Last reviewed: 2026-10-28
 
 | Gate | Command | Enforced where | Last result | Evidence |
 | --- | --- | --- | --- | --- |
-| .NET format | `dotnet format GranolaProjectIntelligence.sln --verify-no-changes --severity error --no-restore` | CI | Not run in this audit | `ci.yml` "Format check" |
-| .NET build | `dotnet build GranolaProjectIntelligence.sln -c Release --no-restore` | CI | Not run | `ci.yml`; warnings are **not** errors (`TreatWarningsAsErrors=false`) |
-| .NET unit + integration tests | `dotnet test GranolaProjectIntelligence.sln -c Release --no-build` | CI (results published with `dorny/test-reporter`) | Not run. README claims 110 unit + 28 integration; the code has 87 unit and 30 integration test methods (`[Fact]`/`[Theory]`, theories expand to more cases) | `ci.yml`, `README.md:130` |
+| .NET format | `dotnet format Chroniq.sln --verify-no-changes --severity error --no-restore` | CI | Not run in this audit | `ci.yml` "Format check" |
+| .NET build | `dotnet build Chroniq.sln -c Release --no-restore` | CI | Not run | `ci.yml`; warnings are **not** errors (`TreatWarningsAsErrors=false`) |
+| .NET unit + integration tests | `dotnet test Chroniq.sln -c Release --no-build` | CI (results published with `dorny/test-reporter`) | Not run. README claims 110 unit + 28 integration; the code has 87 unit and 30 integration test methods (`[Fact]`/`[Theory]`, theories expand to more cases) | `ci.yml`, `README.md:130` |
 | Frontend type check + build | `npm run build` (`tsc --noEmit -p tsconfig.json && vite build`) | CI | Not run | `ci.yml`, `package.json` |
 | Frontend unit tests | `npm test` (`vitest run`, `src/**/*.test.{ts,tsx}`) | CI | Not run | `ci.yml`, `vite.config.ts` |
 | Frontend lint | None (no ESLint/Prettier config, although 8 `eslint-disable` comments exist) | — | — | RF-014 |

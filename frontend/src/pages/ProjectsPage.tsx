@@ -34,7 +34,7 @@ function ProjectsTab() {
     setExporting(true);
     try {
       const cfg = await api.projects.exportConfig();
-      downloadJson(`granola-projects-${new Date().toISOString().slice(0, 10)}.json`, cfg);
+      downloadJson(`chroniq-projects-${new Date().toISOString().slice(0, 10)}.json`, cfg);
     } catch (e) {
       notifyError(e, 'Export failed');
     } finally {

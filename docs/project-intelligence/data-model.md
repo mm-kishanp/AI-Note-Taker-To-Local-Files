@@ -2,16 +2,16 @@
 
 Last reviewed: 2026-10-28
 
-- Evidence scope: `src/GranolaPI.Domain/Entities/Entities.cs`, `src/GranolaPI.Domain/Enums/Enums.cs`, `src/GranolaPI.Infrastructure/Persistence/AppDbContext.cs`, `SettingsService.cs`, migrations `20261026152901_InitialCreate` (12 `CreateTable` calls) and `20261027144432_AddMeetingSource`, `src/GranolaPI.Application/Interfaces/Interfaces.cs` (`SettingKeys`, `SecretNames`). The live database was not opened (it holds meeting content).
+- Evidence scope: `src/Chroniq.Domain/Entities/Entities.cs`, `src/Chroniq.Domain/Enums/Enums.cs`, `src/Chroniq.Infrastructure/Persistence/AppDbContext.cs`, `SettingsService.cs`, migrations `20261026152901_InitialCreate` (12 `CreateTable` calls) and `20261027144432_AddMeetingSource`, `src/Chroniq.Application/Interfaces/Interfaces.cs` (`SettingKeys`, `SecretNames`). The live database was not opened (it holds meeting content).
 - Confidence: High
 
 ## Data stores
 
 | Store | Purpose | Evidence | Environment notes |
 |---|---|---|---|
-| SQLite `granola-pi.db` | Operational state: meetings (incl. full notes/summary/transcript JSON), projects, clients, rules, export records, sync history, settings, sync lease | `Program.cs:17-19`, `src/GranolaPI.Infrastructure/DependencyInjection.cs:26` | Desktop: `<repo or BaseDirectory>/data/granola-pi.db`. Docker: `/data/state` volume (`App__DataDirectory`). Overridable with `ConnectionStrings:Default`. |
-| Export roots (Markdown files) | The product output: notes, transcripts, `PROJECT_CONTEXT.md`, project `README.md`, `ReviewQueue.md` | `ExportLayout.cs`, `ProjectContextService.cs` | Default `./GranolaProjectKnowledge` relative to `App:BaseDirectory` (`AppSettings.cs:11`); separate notes/transcripts roots optional. Docker: bind mount `./GranolaProjectKnowledge`. |
-| Log files | JSON lines, one file per UTC day, `granola-pi-yyyyMMdd.log` | `FileLogger.cs:46-55` | `data/logs` by default; retention 14 days (`AppSettings.cs:89-91`) |
+| SQLite `chroniq.db` | Operational state: meetings (incl. full notes/summary/transcript JSON), projects, clients, rules, export records, sync history, settings, sync lease | `Program.cs:17-19`, `src/Chroniq.Infrastructure/DependencyInjection.cs:26` | Desktop: `<repo or BaseDirectory>/data/chroniq.db`. Docker: `/data/state` volume (`App__DataDirectory`). Overridable with `ConnectionStrings:Default`. |
+| Export roots (Markdown files) | The product output: notes, transcripts, `PROJECT_CONTEXT.md`, project `README.md`, `ReviewQueue.md` | `ExportLayout.cs`, `ProjectContextService.cs` | Default `./ChroniqKnowledge` relative to `App:BaseDirectory` (`AppSettings.cs:11`); separate notes/transcripts roots optional. Docker: bind mount `./ChroniqKnowledge`. |
+| Log files | JSON lines, one file per UTC day, `chroniq-yyyyMMdd.log` | `FileLogger.cs:46-55` | `data/logs` by default; retention 14 days (`AppSettings.cs:89-91`) |
 | OS secret store / environment | API keys (Granola, Fireflies, Anthropic) | `CredentialStores.cs` | Never stored in SQLite (`AppDbContext.cs:9-10`). See [security-review.md](security-review.md). |
 
 ## Entity relationships
@@ -52,9 +52,9 @@ Conventions (Verified, `AppDbContext.cs:28-45`): all enums stored as strings (ma
 
 ## Migrations and data lifecycle
 
-- **Migration mechanism:** EF Core migrations in `src/GranolaPI.Infrastructure/Persistence/Migrations/`, applied automatically with `db.Database.MigrateAsync()` at every start-up (`Program.cs:48-51`). Tool: `dotnet-ef` 10.0.5 (`dotnet-tools.json`). Latest migration: `20261027144432_AddMeetingSource` (adds `Meetings.Source`, default `Granola`).
-- **Backfill / rollback:** `AddMeetingSource.Down` drops the column. No documented rollback procedure; the safe rollback is restoring a copy of `granola-pi.db` (see [docs/TROUBLESHOOTING.md](../TROUBLESHOOTING.md#backup-and-recovery)). Because migrations run automatically, starting an older build against a newer database is Unknown/unsupported (Q-006).
+- **Migration mechanism:** EF Core migrations in `src/Chroniq.Infrastructure/Persistence/Migrations/`, applied automatically with `db.Database.MigrateAsync()` at every start-up (`Program.cs:48-51`). Tool: `dotnet-ef` 10.0.5 (`dotnet-tools.json`). Latest migration: `20261027144432_AddMeetingSource` (adds `Meetings.Source`, default `Granola`).
+- **Backfill / rollback:** `AddMeetingSource.Down` drops the column. No documented rollback procedure; the safe rollback is restoring a copy of `chroniq.db` (see [docs/TROUBLESHOOTING.md](../TROUBLESHOOTING.md#backup-and-recovery)). Because migrations run automatically, starting an older build against a newer database is Unknown/unsupported (Q-006).
 - **Retention / deletion:** sync runs, meetings and export records are never purged by code (Inferred, Medium: no delete paths found apart from `DeleteClientAsync`, `ProjectService.cs:275`). Deleted/inaccessible source meetings are marked `SourceStatus.Deleted/Inaccessible` and their files are kept (`SyncEngine.cs:348-354`, `MeetingProcessor.cs:74-83`). Log files are pruned by age (`FileLogger.cs:50-55`). See Q-010.
 - **Indexes / constraints:** listed above. Gap: uniqueness of `Meeting.GranolaNoteId` does not include `Source` (RF-006).
 - **Settings:** stored as JSON per section; unknown or corrupt JSON falls back to defaults (`SettingsService.cs:24-36`), so new settings are backward compatible.
-- **Verified source paths:** `src/GranolaPI.Infrastructure/Persistence/AppDbContext.cs`, `src/GranolaPI.Domain/Entities/Entities.cs`, `src/GranolaPI.Infrastructure/Persistence/Migrations/`.
+- **Verified source paths:** `src/Chroniq.Infrastructure/Persistence/AppDbContext.cs`, `src/Chroniq.Domain/Entities/Entities.cs`, `src/Chroniq.Infrastructure/Persistence/Migrations/`.

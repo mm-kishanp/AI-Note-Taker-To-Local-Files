@@ -1,7 +1,7 @@
 @echo off
 setlocal EnableExtensions
 REM ============================================================================
-REM  Granola Project Intelligence Sync - one-click launcher
+REM  CHRONIQ - one-click launcher
 REM
 REM    run.bat            Build the UI if needed, start the app, open the browser
 REM    run.bat rebuild    Force a fresh UI build (after pulling changes)
@@ -9,7 +9,7 @@ REM    run.bat dev        Developer mode: API + Vite hot-reload UI in two window
 REM    run.bat test       Run all backend and frontend tests
 REM
 REM  Data lives next to this file:  data\  (database, logs)
-REM                                 GranolaProjectKnowledge\  (Markdown export)
+REM                                 ChroniqKnowledge\  (Markdown export)
 REM ============================================================================
 
 cd /d "%~dp0"
@@ -29,7 +29,7 @@ if /i "%MODE%"=="dev" goto :dev
 
 REM ---- build the UI when missing (or on "rebuild") ---------------------------
 if /i "%MODE%"=="rebuild" goto :buildui
-if not exist "src\GranolaPI.Api\wwwroot\index.html" goto :buildui
+if not exist "src\Chroniq.Api\wwwroot\index.html" goto :buildui
 goto :start
 
 :buildui
@@ -43,16 +43,16 @@ powershell -NoProfile -ExecutionPolicy Bypass -File "scripts\build-frontend.ps1"
 
 :start
 echo [2/3] Building the server...
-dotnet build "src\GranolaPI.Api" -c Release -v quiet -nologo || goto :fail
+dotnet build "src\Chroniq.Api" -c Release -v quiet -nologo || goto :fail
 
-echo [3/3] Starting Granola Project Intelligence Sync at %URL%
+echo [3/3] Starting CHRONIQ at %URL%
 echo       Close this window or press Ctrl+C to stop.
 REM Open the browser as soon as the server answers.
 start "" /b powershell -NoProfile -Command "for($i=0;$i -lt 120;$i++){try{Invoke-WebRequest '%URL%/api/health' -UseBasicParsing -TimeoutSec 2 | Out-Null; Start-Process '%URL%'; break}catch{Start-Sleep 1}}"
 
 set "ASPNETCORE_ENVIRONMENT=Production"
 set "App__BaseDirectory=%ROOT%"
-dotnet run --project "src\GranolaPI.Api" -c Release --no-build --no-launch-profile --urls %URL%
+dotnet run --project "src\Chroniq.Api" -c Release --no-build --no-launch-profile --urls %URL%
 goto :eof
 
 :dev
@@ -62,8 +62,8 @@ if not exist "frontend\node_modules" (
   call npm ci || (popd & goto :fail)
   popd
 )
-start "Granola PI - API" cmd /k "set ASPNETCORE_ENVIRONMENT=Development && dotnet run --project src\GranolaPI.Api --no-launch-profile --urls %URL%"
-start "Granola PI - UI" cmd /k "cd frontend && npm run dev"
+start "CHRONIQ - API" cmd /k "set ASPNETCORE_ENVIRONMENT=Development && dotnet run --project src\Chroniq.Api --no-launch-profile --urls %URL%"
+start "CHRONIQ - UI" cmd /k "cd frontend && npm run dev"
 start "" /b powershell -NoProfile -Command "for($i=0;$i -lt 180;$i++){try{Invoke-WebRequest 'http://localhost:5173' -UseBasicParsing -TimeoutSec 2 | Out-Null; Start-Process 'http://localhost:5173'; break}catch{Start-Sleep 1}}"
 goto :eof
 

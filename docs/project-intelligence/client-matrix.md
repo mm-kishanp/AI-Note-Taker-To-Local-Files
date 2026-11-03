@@ -7,7 +7,7 @@ Last reviewed: 2026-10-28
 
 **Not applicable — single-user, single-deployment application.** Each installation serves one person (one API key set, one SQLite database, no user accounts; `Program.cs`, `Middleware.cs`). There is no tenant selection, no per-client configuration or branding, and no client-specific code path.
 
-**Terminology warning:** the codebase has a domain entity called `Client` (`src/GranolaPI.Domain/Entities/Entities.cs:5-15`, `ClientsController`, `/clients` page). It represents *the user's own customers* (for example the company a meeting was with) and groups projects and classification rules. It is user-entered data, not a software client or tenant, and does not change application behaviour per installation. Do not record those records here.
+**Terminology warning:** the codebase has a domain entity called `Client` (`src/Chroniq.Domain/Entities/Entities.cs:5-15`, `ClientsController`, `/clients` page). It represents *the user's own customers* (for example the company a meeting was with) and groups projects and classification rules. It is user-entered data, not a software client or tenant, and does not change application behaviour per installation. Do not record those records here.
 
 ## Client list sources
 
