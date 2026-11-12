@@ -680,6 +680,45 @@
         }
       }
     },
+    "/api/meetings/{id}/recordings/{recordingId}/open": {
+      "post": {
+        "tags": [
+          "Meetings"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "recordingId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "folder",
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/unassigned": {
       "get": {
         "tags": [
@@ -2100,6 +2139,109 @@
         }
       }
     },
+    "/api/settings/credentials/whisperai": {
+      "get": {
+        "tags": [
+          "Settings"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/CredentialStatusDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CredentialStatusDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CredentialStatusDto"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Settings"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetCredentialRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetCredentialRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetCredentialRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/CredentialStatusDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CredentialStatusDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CredentialStatusDto"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Settings"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/CredentialStatusDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CredentialStatusDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CredentialStatusDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/settings/credentials/ai": {
       "get": {
         "tags": [
@@ -2274,6 +2416,35 @@
       "post": {
         "tags": [
           "Fireflies"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConnectionTestDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConnectionTestDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConnectionTestDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/whisperai/test-connection": {
+      "post": {
+        "tags": [
+          "WhisperAi"
         ],
         "responses": {
           "200": {
@@ -3384,6 +3555,27 @@
           "exportTranscripts": {
             "type": "boolean"
           },
+          "exportAudio": {
+            "type": "boolean"
+          },
+          "exportVideo": {
+            "type": "boolean"
+          },
+          "recordingsRootDirectory": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "recordingsDirectoryTemplate": {
+            "type": "string"
+          },
+          "unassignedRecordingsDirectory": {
+            "type": "string"
+          },
+          "sharedRecordingsDirectory": {
+            "type": "string"
+          },
           "includeAttachmentLinks": {
             "type": "boolean"
           },
@@ -3687,7 +3879,8 @@
           "history",
           "failureCount",
           "nextRetryAt",
-          "lastErrorCategory"
+          "lastErrorCategory",
+          "recordings"
         ],
         "type": "object",
         "properties": {
@@ -3810,6 +4003,12 @@
           },
           "lastErrorCategory": {
             "$ref": "#/components/schemas/ErrorCategory"
+          },
+          "recordings": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RecordingDto"
+            }
           }
         }
       },
@@ -3920,7 +4119,8 @@
       "MeetingSource": {
         "enum": [
           "Granola",
-          "Fireflies"
+          "Fireflies",
+          "WhisperAi"
         ],
         "default": "Granola"
       },
@@ -4500,6 +4700,82 @@
           "Archived"
         ]
       },
+      "RecordingDto": {
+        "required": [
+          "id",
+          "kind",
+          "status",
+          "relativePath",
+          "absolutePath",
+          "fileExists",
+          "sizeBytes",
+          "attempts",
+          "lastError",
+          "updatedAt"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/RecordingKind"
+          },
+          "status": {
+            "$ref": "#/components/schemas/RecordingStatus"
+          },
+          "relativePath": {
+            "type": "string"
+          },
+          "absolutePath": {
+            "type": "string"
+          },
+          "fileExists": {
+            "type": "boolean"
+          },
+          "sizeBytes": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int64"
+          },
+          "attempts": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "lastError": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "RecordingKind": {
+        "enum": [
+          "Audio",
+          "Video"
+        ]
+      },
+      "RecordingStatus": {
+        "enum": [
+          "Downloaded",
+          "Failed",
+          "Unavailable"
+        ]
+      },
       "ReExportRequest": {
         "type": "object",
         "properties": {
@@ -4548,6 +4824,10 @@
           },
           "baseDirectory": {
             "type": "string"
+          },
+          "recordingsRoot": {
+            "type": "string",
+            "default": ""
           }
         }
       },
@@ -5504,6 +5784,9 @@
     },
     {
       "name": "Fireflies"
+    },
+    {
+      "name": "WhisperAi"
     },
     {
       "name": "Exports"

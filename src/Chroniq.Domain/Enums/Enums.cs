@@ -187,6 +187,23 @@ public enum ErrorCategory
     Unknown = 99,
 }
 
+/// <summary>Which recording of a call: the audio track or the video.</summary>
+public enum RecordingKind
+{
+    Audio = 0,
+    Video = 1,
+}
+
+public enum RecordingStatus
+{
+    /// <summary>The file is on disk at <c>MeetingRecording.RelativePath</c>.</summary>
+    Downloaded = 0,
+    /// <summary>The last attempt failed; it is retried on later syncs until the attempt limit.</summary>
+    Failed = 1,
+    /// <summary>The source has no such recording (not recorded, plan without access, or call gone). Not retried automatically.</summary>
+    Unavailable = 2,
+}
+
 public enum ReviewAction
 {
     AssignedProject = 0,

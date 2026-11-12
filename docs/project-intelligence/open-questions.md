@@ -1,6 +1,6 @@
 # Open Questions
 
-Last reviewed: 2026-10-28
+Last reviewed: 2026-11-12
 
 | ID | Question | Why it matters | Evidence already checked | Blocking? | Suggested next step |
 | --- | --- | --- | --- | --- | --- |
@@ -16,3 +16,4 @@ Last reviewed: 2026-10-28
 | Q-010 | Should old sync runs, run items and meetings deleted at the source ever be purged from the database? | The DB keeps full meeting content indefinitely | No purge code found | No | Decide retention policy |
 | Q-011 | Should manual meeting actions wait for, or be blocked during, a running sync? | Possible race on the same meeting (RF-019) | `MeetingService.cs:210-220` | No | Decide; then add a guard or a test |
 | Q-012 | Do real WhisperAI `utterances`/`sentences` items use `speaker`, `text`, `start`, `end` with times in milliseconds? Does `GET /transcript/{id}` ever return `created`? | The OpenAPI schema leaves these untyped; the mapper relies on the docs example (`"start": 240, "end": 26560`) | `whisperai-openapi.json` (`Transcript.utterances`, `SentencesResponse.sentences` are untyped objects); docs translation example | No | Sync one real transcript with a `wai_` key and compare the transcript Markdown timings with the audio |
+| Q-013 | What does the live Fireflies API return for `audio_url` / `video_url` on a plan without recording access, and does a real Pro key download both? | Decides whether a plan without access shows "Not available" (code mapped to Permission) or "Failed" with up to 5 attempts (unmapped code); the field names and 24-hour expiry are from docs.fireflies.ai/schema/transcript, never run live | FEAT-024 tests use fakes; `FirefliesApiClient.Categorize` maps `paid_required`, `forbidden` and similar to Permission | No | Sync once with a Pro key (audio and video on) and once with a Free key; adjust `Categorize` if the code is unmapped |

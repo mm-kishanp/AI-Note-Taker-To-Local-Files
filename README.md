@@ -21,7 +21,7 @@ ChroniqKnowledge/
 
 ## What it does
 
-- **Syncs** every meeting your Granola key can read and every call your Fireflies key can read (AI notes plus transcript; see [docs/FIREFLIES_API.md](docs/FIREFLIES_API.md)) and every completed transcript your WhisperAI key can read (transcript only; see [docs/WHISPERAI_API.md](docs/WHISPERAI_API.md)): a full historical import first, then incremental runs. You can sync manually or on a schedule, retry failed meetings, re-export, and reconcile the files on disk.
+- **Syncs** every meeting your Granola key can read and every call your Fireflies key can read (AI notes plus transcript, and optionally the audio and video recordings; see [docs/FIREFLIES_API.md](docs/FIREFLIES_API.md)) and every completed transcript your WhisperAI key can read (transcript only; see [docs/WHISPERAI_API.md](docs/WHISPERAI_API.md)): a full historical import first, then incremental runs. You can sync manually or on a schedule, retry failed meetings, re-export, and reconcile the files on disk.
 - **Classifies** each meeting with deterministic rules you configure. Rules can match participant emails or domains, attendee names, speakers Granola identified in the transcript, client mappings, Granola folders, and title or summary keywords. Every assignment records the rule and evidence behind it. AI-assisted classification is optional and off by default.
 - **Never loses a meeting.** Meetings it can't place confidently go to `Unassigned/` and the review screen. A manual assignment always wins over the rules.
 - **Writes notes and transcripts separately.** Each type has its own root folder and directory templates, and the defaults keep them in the same tree. Writes are atomic, filenames are stable, and collisions are resolved safely.

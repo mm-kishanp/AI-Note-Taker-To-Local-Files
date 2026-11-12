@@ -18,6 +18,10 @@ Secrets (API keys) are **not** settings. See [SECURITY.md](SECURITY.md).
 | `sharedNotesDirectory` / `sharedTranscriptsDirectory` | `Shared/Notes`, `Shared/Transcripts` | Destination for meetings marked Shared |
 | `filenameTemplate` | `{MeetingDate}-{MeetingTitle}` | File name without `.md`. Must not contain folders. |
 | `exportNotes` / `exportTranscripts` | `true` | Turn either kind off |
+| `exportAudio` / `exportVideo` | `false` | Download each Fireflies call's audio and/or video during sync. Needs a Fireflies Pro plan or higher. See [FIREFLIES_API.md](FIREFLIES_API.md#recordings-audio-and-video). |
+| `recordingsRootDirectory` | *(root)* | Optional separate root for recordings (they are large) |
+| `recordingsDirectoryTemplate` | `{ProjectDirectory}/Recordings` | Recordings folder, relative to the recordings root |
+| `unassignedRecordingsDirectory` / `sharedRecordingsDirectory` | `Unassigned/Recordings`, `Shared/Recordings` | Destination for recordings of unassigned and shared calls |
 | `includeAttachmentLinks` | `true` | Link Granola photo attachments. The URLs are signed, so anyone holding them can view the photo. |
 | `conflictPolicy` | `PreserveUserEdits` | Or `AlwaysOverwrite`, to make generated files fully managed by the app |
 | `moveFilesOnReassignment` | `true` | Move unmodified files when a meeting changes project |

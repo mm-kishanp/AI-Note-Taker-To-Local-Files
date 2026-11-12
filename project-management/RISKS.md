@@ -13,6 +13,7 @@ Last reviewed: 2026-10-28 (seeded by the project audit)
 | R-007 | Single maintainer and very short history (3 commits in 2 days) — knowledge concentration | Med | Med | `git log` | This knowledge base; tests | Open |
 | R-008 | Upgrades apply migrations automatically with no backup or version — difficult rollback | Low | Med | `Program.cs:51`; no tags | PIDA-018 | Open |
 | R-009 | Manual meeting actions racing a running sync could leave a meeting's export state inconsistent until the next run | Low | Low | RF-019 (Inferred) | Q-011 | Open |
+| R-011 | Recording downloads fill the disk (a one-hour video is often hundreds of MB; no size limit, quota or cleanup) and a full Fireflies back-catalogue can be downloaded by one Full sync | Med | Med | FEAT-024; `RecordingDownloader.cs` checks space only from `Content-Length` | Off by default; separate recordings root; docs warn; consider a size cap or a "from date" for recordings | Open |
 | R-010 | WhisperAI's live `utterances`/`sentences` shape or time unit differs from the documented example, giving wrong timestamps or empty transcripts | Low | Med | Q-012; untyped items in `whisperai-openapi.json` | Fallback to `text` keeps the transcript; verify on first real sync; adjust `WhisperAiUtterance` | Open |
 
 Include security, tenant isolation, data migration, API compatibility, reliability, performance, operational, and delivery risks where applicable. Tenant isolation: not applicable (single-user).

@@ -113,7 +113,20 @@ public sealed class MeetingService(
             history.Select(i => new SyncRunItemDto(i.Id, i.SyncRunId, i.MeetingId, i.GranolaNoteId, i.Operation, i.Outcome, i.ErrorCategory, i.Retryable, i.Message, Utc(i.Timestamp))).ToList(),
             m.FailureCount,
             m.NextRetryAt is { } n ? Utc(n) : null,
-            m.LastErrorCategory);
+            m.LastErrorCategory,
+            m.Recordings.OrderBy(r => r.Kind).Select(r => ToDto(r, layout)).ToList());
+    }
+
+    public static RecordingDto ToDto(MeetingRecording r, ExportLayout layout)
+    {
+        var abs = "";
+        if (r.RelativePath.Length > 0)
+        {
+            try { abs = layout.AbsoluteRecordingPath(r.RelativePath); }
+            catch (InvalidOperationException) { abs = r.RelativePath; }
+        }
+        return new RecordingDto(r.Id, r.Kind, r.Status, r.RelativePath, abs,
+            r.Status == RecordingStatus.Downloaded && abs.Length > 0 && File.Exists(abs), r.SizeBytes, r.Attempts, r.LastError, Utc(r.UpdatedAt));
     }
 
     public async Task<PagedResponse<TranscriptSegmentDto>> TranscriptAsync(Guid id, int page, int pageSize, CancellationToken ct)
@@ -337,10 +350,18 @@ public sealed class MeetingService(
         return layout.AbsolutePath(r.Kind, r.RelativePath);
     }
 
+    public async Task<string> RecordingFilePathAsync(Guid meetingId, Guid recordingId, CancellationToken ct)
+    {
+        var r = await db.MeetingRecordings.AsNoTracking().FirstOrDefaultAsync(x => x.Id == recordingId && x.MeetingId == meetingId, ct)
+            ?? throw new NotFoundException("Recording not found.");
+        if (r.Status != RecordingStatus.Downloaded || r.RelativePath.Length == 0) throw new NotFoundException("This recording has not been downloaded.");
+        return (await LayoutAsync(ct)).AbsoluteRecordingPath(r.RelativePath);
+    }
+
     private async Task<Meeting> LoadAsync(Guid id, CancellationToken ct, bool tracking)
     {
         IQueryable<Meeting> q = db.Meetings.Include(m => m.AssignedProject!).ThenInclude(p => p.Client)
-            .Include(m => m.ExportRecords).Include(m => m.Participants).Include(m => m.ProjectAssignments);
+            .Include(m => m.ExportRecords).Include(m => m.Participants).Include(m => m.ProjectAssignments).Include(m => m.Recordings);
         if (!tracking) q = q.AsNoTracking();
         return await q.FirstOrDefaultAsync(m => m.Id == id, ct) ?? throw new NotFoundException("Meeting not found.");
     }

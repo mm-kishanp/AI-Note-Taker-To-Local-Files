@@ -3,8 +3,9 @@ import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 import { ReassignModal } from '../components/ReassignModal';
 import { SaveMappingModal } from '../components/SaveMappingModal';
-import { credential, meeting, project } from '../test/fixtures';
+import { credential, meeting, meetingDetail, project, recording } from '../test/fixtures';
 import { mockFetch, paged, renderWithProviders, route, type RecordedCall } from '../test/utils';
+import { MeetingDetailPage } from './MeetingDetailPage';
 import { MeetingsPage } from './MeetingsPage';
 import { SettingsPage } from './SettingsPage';
 
@@ -29,6 +30,64 @@ describe('MeetingsPage', () => {
     await waitFor(() =>
       expect(calls.some((c) => c.url.pathname === '/api/meetings' && c.url.searchParams.get('search') === 'budget')).toBe(true));
     await waitFor(() => expect(screen.queryByText('Sprint planning')).not.toBeInTheDocument());
+  });
+});
+
+describe('MeetingDetailPage: recordings', () => {
+  const render = (recordings: ReturnType<typeof recording>[]) => {
+    const mocked = mockFetch([
+      route('GET /api/meetings/m1', meetingDetail({ recordings })),
+      route('POST /api/meetings/m1/recordings/33333333-3333-3333-3333-333333333333/open', undefined, 204),
+      ...lookups,
+    ]);
+    renderWithProviders(<MeetingDetailPage />, { path: '/meetings/:id', initialEntry: '/meetings/m1' });
+    return mocked;
+  };
+
+  it('has no Recordings tab when the call has none', async () => {
+    render([]);
+    expect(await screen.findByRole('tab', { name: /Exported files/ })).toBeInTheDocument();
+    expect(screen.queryByRole('tab', { name: /Recordings/ })).not.toBeInTheDocument();
+  });
+
+  it('lists each recording with its status and size, and plays a downloaded one', async () => {
+    const { calls } = render([
+      recording(),
+      recording({ id: '44444444-4444-4444-4444-444444444444', kind: 'Video', status: 'Unavailable', relativePath: '', absolutePath: '', fileExists: false,
+        sizeBytes: null, lastError: 'Fireflies has no video for this call.' }),
+    ]);
+
+    await userEvent.click(await screen.findByRole('tab', { name: 'Recordings (2)' }));
+
+    expect(await screen.findByText('Downloaded')).toBeInTheDocument();
+    expect(screen.getByText('Not available')).toBeInTheDocument();
+    expect(screen.getByText('5.0 MB')).toBeInTheDocument();
+    expect(screen.getByText('Fireflies has no video for this call.')).toBeInTheDocument();
+    // Nothing to play for a recording that was never downloaded.
+    expect(screen.getByRole('button', { name: 'Play video recording' })).toBeDisabled();
+
+    await userEvent.click(screen.getByRole('button', { name: 'Play audio recording' }));
+    await waitFor(() => {
+      const open = calls.find((c) => c.url.pathname.endsWith('/recordings/33333333-3333-3333-3333-333333333333/open'));
+      expect(open?.method).toBe('POST');
+      expect(open?.url.searchParams.get('folder')).toBe('false');
+      expect(open?.headers['X-Chroniq-Request']).toBe('1');
+    });
+  });
+
+  it('flags a downloaded recording whose file was removed, and a failed one with its attempts', async () => {
+    render([
+      recording({ fileExists: false }),
+      recording({ id: '55555555-5555-5555-5555-555555555555', kind: 'Video', status: 'Failed', attempts: 2, sizeBytes: null, fileExists: false,
+        lastError: 'The recording host is busy (503); it is retried on the next sync.' }),
+    ]);
+
+    await userEvent.click(await screen.findByRole('tab', { name: 'Recordings (2)' }));
+
+    expect(await screen.findByText(/File missing on disk/)).toBeInTheDocument();
+    expect(screen.getByText('Failed')).toBeInTheDocument();
+    expect(screen.getByText('2 attempts')).toBeInTheDocument();
+    expect(screen.getByText(/recording host is busy/)).toBeInTheDocument();
   });
 });
 

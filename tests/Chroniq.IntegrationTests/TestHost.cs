@@ -2,9 +2,11 @@ using System.Collections.Concurrent;
 using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Chroniq.Application.Export;
 using Chroniq.Application.Fireflies;
 using Chroniq.Application.Granola;
 using Chroniq.Application.Interfaces;
+using Chroniq.Application.Recordings;
 using Chroniq.Application.Synchronization;
 using Chroniq.Application.WhisperAi;
 using Chroniq.Domain.Enums;
@@ -175,6 +177,40 @@ public sealed class FakeFirefliesApi : IFirefliesApiClient
         ThrowIfFailing();
         return Task.FromResult(Calls.TryGetValue(transcriptId, out var c) ? c : null);
     }
+
+    public ConcurrentDictionary<(string Id, RecordingKind Kind), string> RecordingUrls { get; } = new();
+    /// <summary>When set, asking for any recording link fails with this category (Permission = a plan without recordings).</summary>
+    public ErrorCategory? FailRecordingsWith { get; set; }
+    public int RecordingUrlCalls;
+
+    public void AddRecording(string id, RecordingKind kind) =>
+        RecordingUrls[(id, kind)] = $"https://files.example.com/{id}.{(kind == RecordingKind.Audio ? "mp3" : "mp4")}?sig=private";
+
+    public Task<string?> GetRecordingUrlAsync(string transcriptId, RecordingKind kind, CancellationToken ct)
+    {
+        Interlocked.Increment(ref RecordingUrlCalls);
+        ThrowIfFailing();
+        if (FailRecordingsWith is { } c) throw new FirefliesApiException(c, 403, "fake fireflies: recordings need a Pro plan");
+        return Task.FromResult(RecordingUrls.TryGetValue((transcriptId, kind), out var url) ? url : null);
+    }
+}
+
+/// <summary>Writes a few bytes instead of downloading anything (only used in tests).</summary>
+public sealed class FakeRecordingDownloader : IRecordingDownloader
+{
+    public ConcurrentQueue<Uri> Requested { get; } = new();
+    public ErrorCategory? FailWith { get; set; }
+
+    public Task<RecordingFile> DownloadAsync(Uri url, string directory, string stem, string fallbackExtension, CancellationToken ct)
+    {
+        Requested.Enqueue(url);
+        if (FailWith is { } c) throw new ExportFileException(c, "fake download failure");
+        Directory.CreateDirectory(directory);
+        var ext = Path.GetExtension(url.AbsolutePath);
+        var path = Path.Combine(directory, stem + (ext.Length == 0 ? fallbackExtension : ext));
+        File.WriteAllBytes(path, [1, 2, 3, 4]);
+        return Task.FromResult(new RecordingFile(path, 4));
+    }
 }
 
 /// <summary>Deterministic in-memory stand-in for the WhisperAI API (only used in tests).</summary>
@@ -252,6 +288,7 @@ public sealed class AppFactory : WebApplicationFactory<Program>
     public FakeGranolaApi Granola { get; } = new();
     public FakeFirefliesApi Fireflies { get; } = new();
     public FakeWhisperAiApi WhisperAi { get; } = new();
+    public FakeRecordingDownloader Downloader { get; } = new();
     public InMemoryCredentialStore Credentials { get; } = new();
     public string ExportRoot => Path.Combine(BaseDir, "ChroniqKnowledge");
 
@@ -278,6 +315,8 @@ public sealed class AppFactory : WebApplicationFactory<Program>
             services.AddSingleton<IFirefliesApiClient>(Fireflies);
             services.RemoveAll<IWhisperAiApiClient>();
             services.AddSingleton<IWhisperAiApiClient>(WhisperAi);
+            services.RemoveAll<IRecordingDownloader>();
+            services.AddSingleton<IRecordingDownloader>(Downloader);
             services.RemoveAll<ICredentialStore>();
             services.AddSingleton<ICredentialStore>(Credentials);
         });

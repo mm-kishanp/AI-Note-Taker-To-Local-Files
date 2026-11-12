@@ -4,6 +4,7 @@ using Chroniq.Application.Export;
 using Chroniq.Application.Fireflies;
 using Chroniq.Application.Granola;
 using Chroniq.Application.Interfaces;
+using Chroniq.Application.Recordings;
 using Chroniq.Application.Settings;
 using Chroniq.Application.WhisperAi;
 using Chroniq.Domain.Entities;
@@ -108,7 +109,7 @@ public sealed class SyncEngine(
                         try
                         {
                             var fireflies = scope.ServiceProvider.GetRequiredService<IFirefliesApiClient>();
-                            items.AddRange(await DiscoverFirefliesAsync(fireflies, db, from, counters, ct));
+                            items.AddRange(await DiscoverFirefliesAsync(fireflies, db, from, settings.Export, counters, ct));
                             listedSources.Add(MeetingSource.Fireflies);
                         }
                         catch (GranolaApiException ex) when (multiSource)
@@ -338,7 +339,7 @@ public sealed class SyncEngine(
     /// Lists Fireflies calls from <paramref name="from"/>. Fireflies reports no update time, so a known call is
     /// fetched again only while its transcript or AI notes are still missing (Fireflies adds them after the call).
     /// </summary>
-    private async Task<List<WorkItem>> DiscoverFirefliesAsync(IFirefliesApiClient api, IAppDbContext db, DateTimeOffset? from, SyncCounters counters, CancellationToken ct)
+    private async Task<List<WorkItem>> DiscoverFirefliesAsync(IFirefliesApiClient api, IAppDbContext db, DateTimeOffset? from, ExportSettings export, SyncCounters counters, CancellationToken ct)
     {
         const int pageSize = 50;
         var items = new List<WorkItem>();
@@ -349,8 +350,13 @@ public sealed class SyncEngine(
             var ids = page.Select(t => t.Id).ToList();
             var known = await db.Meetings.AsNoTracking()
                 .Where(m => m.Source == MeetingSource.Fireflies && ids.Contains(m.GranolaNoteId))
-                .Select(m => new { m.GranolaNoteId, m.ExportPending, m.NotesStatus, m.TranscriptStatus, m.SourceStatus })
+                .Select(m => new { m.Id, m.GranolaNoteId, m.ExportPending, m.NotesStatus, m.TranscriptStatus, m.SourceStatus })
                 .ToDictionaryAsync(m => m.GranolaNoteId, ct);
+            var knownIds = known.Values.Select(k => k.Id).ToList();
+            var recordingRows = RecordingService.EnabledKinds(export).Count == 0
+                ? new Dictionary<Guid, List<MeetingRecording>>()
+                : (await db.MeetingRecordings.AsNoTracking().Where(r => knownIds.Contains(r.MeetingId)).ToListAsync(ct))
+                    .GroupBy(r => r.MeetingId).ToDictionary(g => g.Key, g => g.ToList());
 
             foreach (var call in page)
             {
@@ -363,6 +369,13 @@ public sealed class SyncEngine(
                     && k.TranscriptStatus == ContentStatus.Available
                     && k.SourceStatus == SourceStatus.Active)
                 {
+                    // The call itself is complete. Only its recordings may still be missing (just turned on, or a failed
+                    // download with attempts left): then process it without fetching the transcript again.
+                    if (RecordingService.NeedsDownload(export, recordingRows.GetValueOrDefault(k.Id) ?? []))
+                    {
+                        items.Add(new WorkItem(call.Id, Fetch: false, k.Id, MeetingSource.Fireflies));
+                        continue;
+                    }
                     counters.MeetingsSkipped++;
                     continue;
                 }

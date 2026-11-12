@@ -81,6 +81,18 @@ public sealed record ExportRecordDto(
     DateTimeOffset? ConflictDetectedAt,
     string? LastError);
 
+public sealed record RecordingDto(
+    Guid Id,
+    RecordingKind Kind,
+    RecordingStatus Status,
+    string RelativePath,
+    string AbsolutePath,
+    bool FileExists,
+    long? SizeBytes,
+    int Attempts,
+    string? LastError,
+    DateTimeOffset UpdatedAt);
+
 public sealed record ClassificationExplanationDto(
     ClassificationStatus Status,
     AssignmentMethod Method,
@@ -120,7 +132,8 @@ public sealed record MeetingDetailDto(
     IReadOnlyList<SyncRunItemDto> History,
     int FailureCount,
     DateTimeOffset? NextRetryAt,
-    ErrorCategory LastErrorCategory);
+    ErrorCategory LastErrorCategory,
+    IReadOnlyList<RecordingDto> Recordings);
 
 public sealed record SpeakerDto(string Name, int Segments);
 
@@ -265,7 +278,7 @@ public sealed record SettingsDto(
     LoggingSettings Logging,
     ResolvedPathsDto ResolvedPaths);
 
-public sealed record ResolvedPathsDto(string Root, string NotesRoot, string TranscriptsRoot, string BaseDirectory);
+public sealed record ResolvedPathsDto(string Root, string NotesRoot, string TranscriptsRoot, string BaseDirectory, string RecordingsRoot = "");
 
 public sealed record UpdateSettingsRequest(ExportSettings? Export, SyncSettings? Sync, ClassificationSettings? Classification, LoggingSettings? Logging);
 

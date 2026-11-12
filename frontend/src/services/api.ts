@@ -241,6 +241,8 @@ export const api = {
       request<MeetingDetailDto>('POST', `/meetings/${enc(id)}/exports/${enc(recordId)}/resolve`, { body: { resolution } }),
     openExport: (id: string, recordId: string, folder: boolean) =>
       request<void>('POST', `/meetings/${enc(id)}/exports/${enc(recordId)}/open`, { query: { folder } }),
+    openRecording: (id: string, recordingId: string, folder: boolean) =>
+      request<void>('POST', `/meetings/${enc(id)}/recordings/${enc(recordingId)}/open`, { query: { folder } }),
   },
 
   unassigned: {

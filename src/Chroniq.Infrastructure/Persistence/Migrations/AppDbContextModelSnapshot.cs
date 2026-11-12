@@ -473,6 +473,53 @@ namespace Chroniq.Infrastructure.Persistence.Migrations
                     b.ToTable("MeetingProjectAssignments");
                 });
 
+            modelBuilder.Entity("Chroniq.Domain.Entities.MeetingRecording", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Attempts")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("LastError")
+                        .HasMaxLength(1000)
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("MeetingId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("RelativePath")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("TEXT");
+
+                    b.Property<long?>("SizeBytes")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("MeetingId", "Kind")
+                        .IsUnique();
+
+                    b.ToTable("MeetingRecordings");
+                });
+
             modelBuilder.Entity("Chroniq.Domain.Entities.Project", b =>
                 {
                     b.Property<Guid>("Id")
@@ -733,6 +780,15 @@ namespace Chroniq.Infrastructure.Persistence.Migrations
                     b.Navigation("Project");
                 });
 
+            modelBuilder.Entity("Chroniq.Domain.Entities.MeetingRecording", b =>
+                {
+                    b.HasOne("Chroniq.Domain.Entities.Meeting", null)
+                        .WithMany("Recordings")
+                        .HasForeignKey("MeetingId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("Chroniq.Domain.Entities.Project", b =>
                 {
                     b.HasOne("Chroniq.Domain.Entities.Client", "Client")
@@ -766,6 +822,8 @@ namespace Chroniq.Infrastructure.Persistence.Migrations
                     b.Navigation("Participants");
 
                     b.Navigation("ProjectAssignments");
+
+                    b.Navigation("Recordings");
                 });
 
             modelBuilder.Entity("Chroniq.Domain.Entities.Project", b =>

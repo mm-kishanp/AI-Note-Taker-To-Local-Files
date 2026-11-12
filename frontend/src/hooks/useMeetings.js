@@ -73,3 +73,8 @@ export function useOpenExport() {
         mutationFn: ({ id, recordId, folder }) => api.meetings.openExport(id, recordId, folder),
     });
 }
+export function useOpenRecording() {
+    return useMutation({
+        mutationFn: ({ id, recordingId, folder }) => api.meetings.openRecording(id, recordingId, folder),
+    });
+}

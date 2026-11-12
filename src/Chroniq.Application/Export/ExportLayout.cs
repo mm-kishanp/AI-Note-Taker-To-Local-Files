@@ -29,11 +29,13 @@ public sealed class ExportLayout
         Root = SafePath.NormalizeRoot(settings.RootDirectory, baseDirectory);
         NotesRoot = string.IsNullOrWhiteSpace(settings.NotesRootDirectory) ? Root : SafePath.NormalizeRoot(settings.NotesRootDirectory, baseDirectory);
         TranscriptsRoot = string.IsNullOrWhiteSpace(settings.TranscriptsRootDirectory) ? Root : SafePath.NormalizeRoot(settings.TranscriptsRootDirectory, baseDirectory);
+        RecordingsRoot = string.IsNullOrWhiteSpace(settings.RecordingsRootDirectory) ? Root : SafePath.NormalizeRoot(settings.RecordingsRootDirectory, baseDirectory);
     }
 
     public string Root { get; }
     public string NotesRoot { get; }
     public string TranscriptsRoot { get; }
+    public string RecordingsRoot { get; }
     public ExportSettings Settings => _s;
 
     public bool SharedRoot => string.Equals(NotesRoot, TranscriptsRoot, OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal);
@@ -74,6 +76,23 @@ public sealed class ExportLayout
         return rel;
     }
 
+    public string AbsoluteRecordingPath(string relativePath) => SafePath.Combine(RecordingsRoot, relativePath);
+
+    /// <summary>Recordings folder relative to the recordings root, e.g. "Projects/MotorDealerApp/Recordings".</summary>
+    public string RecordingsDirectory(ExportLocation location, ProjectInfo? project, DateTimeOffset date, string meetingId, string title)
+    {
+        var segments = location switch
+        {
+            ExportLocation.Project when project is not null =>
+                PathTemplates.ExpandDirectory(_s.RecordingsDirectoryTemplate, Ctx(project, date, meetingId, title, ProjectDirectory(project, date, meetingId, title))),
+            ExportLocation.Shared => PathTemplates.ExpandDirectory(_s.SharedRecordingsDirectory, Ctx(null, date, meetingId, title, null)),
+            _ => PathTemplates.ExpandDirectory(_s.UnassignedRecordingsDirectory, Ctx(null, date, meetingId, title, null)),
+        };
+        var rel = string.Join('/', segments);
+        SafePath.Combine(RecordingsRoot, rel.Length == 0 ? "." : rel); // throws if it escapes the root
+        return rel;
+    }
+
     public string FileStem(ProjectInfo? project, DateTimeOffset date, string meetingId, string title) =>
         PathTemplates.ExpandFileName(_s.FilenameTemplate, Ctx(project, date, meetingId, title, null));
 
@@ -99,6 +118,9 @@ public sealed class ExportLayout
         errors.AddRange(PathTemplates.Validate(s.UnassignedTranscriptsDirectory, "Unassigned transcripts directory", allowProjectVars: false));
         errors.AddRange(PathTemplates.Validate(s.SharedNotesDirectory, "Shared notes directory", allowProjectVars: false));
         errors.AddRange(PathTemplates.Validate(s.SharedTranscriptsDirectory, "Shared transcripts directory", allowProjectVars: false));
+        errors.AddRange(PathTemplates.Validate(s.RecordingsDirectoryTemplate, "Recordings directory template"));
+        errors.AddRange(PathTemplates.Validate(s.UnassignedRecordingsDirectory, "Unassigned recordings directory", allowProjectVars: false));
+        errors.AddRange(PathTemplates.Validate(s.SharedRecordingsDirectory, "Shared recordings directory", allowProjectVars: false));
         errors.AddRange(PathTemplates.Validate(s.FilenameTemplate, "Filename template", isFileName: true));
         if (s.ProjectDirectoryTemplate.Contains("{ProjectDirectory}")) errors.Add("Project directory template cannot reference {ProjectDirectory}.");
         if (!s.ProjectDirectoryTemplate.Contains("{ProjectSlug}") && !s.ProjectDirectoryTemplate.Contains("{ProjectName}"))

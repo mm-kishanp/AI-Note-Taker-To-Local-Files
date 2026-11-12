@@ -26,6 +26,7 @@ erDiagram
     Meeting ||--o{ MeetingParticipant : "Cascade"
     Meeting ||--o{ MeetingProjectAssignment : "Cascade"
     Meeting ||--o{ ExportRecord : "Cascade"
+    Meeting ||--o{ MeetingRecording : "Cascade"
     SyncRun ||--o{ SyncRunItem : "Cascade"
     Meeting ||--o{ ClassificationReview : "MeetingId (no FK configured)"
 ```
@@ -43,6 +44,7 @@ erDiagram
 | `MeetingParticipant` | `Id` | `MeetingId` FK; index `Email` | Names, emails | none | `Entities.cs:128-139` |
 | `MeetingProjectAssignment` | `Id` | Unique (`MeetingId`, `ProjectId`) | — | none | `Entities.cs:141-150` |
 | `ExportRecord` | `Id` | One per generated file; index (`MeetingId`, `Kind`, `Location`, `ProjectId`), `RelativePath`, `Status`, `ProjectId` | Relative file paths (contain meeting titles) | none | `Entities.cs:152-171` |
+| `MeetingRecording` | `Id` | One per meeting and kind (Audio/Video): unique index (`MeetingId`, `Kind`); `Status` Downloaded/Failed/Unavailable; `RelativePath` (relative to the recordings root), `SizeBytes`, `Attempts`, `LastError`. Added by migration `AddMeetingRecordings` (new table only, no change to existing tables). The signed Fireflies link is never stored. | Relative file paths (contain meeting titles) | none | `Entities.cs` (`MeetingRecording`), `AppDbContext.cs` |
 | `SyncRun` / `SyncRunItem` | `Id` | Run → items (Cascade); indexes `StartedAt`, `Status`, `MeetingId` | Error messages (≤1000) | none | `Entities.cs:173-209` |
 | `ApplicationSetting` | `Key` (≤100) | JSON value per section | No secrets (Verified: keys are `export`, `sync`, `classification`, `logging`, `sync.checkpoint`, `sync.checkpoint.fireflies`, `granola.connection`, `fireflies.connection`) | none | `Interfaces.cs:36-43`, `SettingsService.cs` |
 | `ClassificationReview` | `Id` | index `MeetingId` | Free-text `Note` | none | `Entities.cs:218-226` |

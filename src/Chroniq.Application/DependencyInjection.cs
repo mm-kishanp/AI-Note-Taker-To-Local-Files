@@ -4,6 +4,7 @@ using Chroniq.Application.Granola;
 using Chroniq.Application.Interfaces;
 using Chroniq.Application.Meetings;
 using Chroniq.Application.Projects;
+using Chroniq.Application.Recordings;
 using Chroniq.Application.Synchronization;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -22,6 +23,7 @@ public static class DependencyInjection
 
         services.AddScoped<ClassificationService>();
         services.AddScoped<MeetingExporter>();
+        services.AddScoped<RecordingService>();
         services.AddScoped<ProjectContextService>();
         services.AddScoped<MeetingProcessor>();
         services.AddScoped<MeetingService>();

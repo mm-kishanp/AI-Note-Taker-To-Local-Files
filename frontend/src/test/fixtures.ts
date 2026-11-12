@@ -1,4 +1,4 @@
-import type { CredentialStatusDto, MeetingListItemDto, ProjectDto } from '../types/api';
+import type { CredentialStatusDto, MeetingDetailDto, MeetingListItemDto, ProjectDto, RecordingDto } from '../types/api';
 
 export const meeting = (over: Partial<MeetingListItemDto> = {}): MeetingListItemDto => ({
   id: '11111111-1111-1111-1111-111111111111',
@@ -20,6 +20,59 @@ export const meeting = (over: Partial<MeetingListItemDto> = {}): MeetingListItem
   lastSyncedAt: '2026-10-26T11:00:00Z',
   lastError: null,
   source: 'Granola',
+  ...over,
+});
+
+export const recording = (over: Partial<RecordingDto> = {}): RecordingDto => ({
+  id: '33333333-3333-3333-3333-333333333333',
+  kind: 'Audio',
+  status: 'Downloaded',
+  relativePath: 'Unassigned/Recordings/2026-10-26-Client-audio.mp3',
+  absolutePath: 'C:/K/Unassigned/Recordings/2026-10-26-Client-audio.mp3',
+  fileExists: true,
+  sizeBytes: 5_242_880,
+  attempts: 0,
+  lastError: null,
+  updatedAt: '2026-10-26T11:00:00Z',
+  ...over,
+});
+
+export const meetingDetail = (over: Partial<MeetingDetailDto> = {}): MeetingDetailDto => ({
+  meeting: meeting({ source: 'Fireflies' }),
+  createdAt: '2026-10-26T10:00:00Z',
+  updatedAt: '2026-10-26T11:00:00Z',
+  meetingStart: '2026-10-26T10:00:00Z',
+  meetingEnd: '2026-10-26T10:30:00Z',
+  ownerName: 'Kishan Parmar',
+  ownerEmail: null,
+  sourceUrl: null,
+  calendarEventTitle: null,
+  granolaFolders: [],
+  participants: [],
+  identifiedSpeakers: [],
+  summary: null,
+  notesContent: null,
+  transcriptSegmentCount: 0,
+  classification: {
+    status: 'Unassigned',
+    method: 'None',
+    certainty: 'None',
+    tier: null,
+    reason: 'No rule matched.',
+    evidence: [],
+    candidates: [],
+    conflicts: [],
+    needsReview: true,
+    suggestedNextAction: null,
+    manualAssignment: 'None',
+    manualAssignedAt: null,
+  },
+  exports: [],
+  history: [],
+  failureCount: 0,
+  nextRetryAt: null,
+  lastErrorCategory: 'None',
+  recordings: [],
   ...over,
 });
 

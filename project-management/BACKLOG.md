@@ -258,6 +258,26 @@ Seeded by the project audit of 2026-10-28. Every task is `Proposed` until the ow
 - **Risks:** Utterance shape untyped in the spec (Q-012).
 - **Evidence/related docs:** FEAT-023, INT-006, ADR-010, `docs/WHISPERAI_API.md`.
 
+### PIDA-020 — Download Fireflies call recordings (audio and video)
+- **Status:** Done (2026-11-12), except a live check with a real Pro key (Q-013)
+- **Priority:** P1 (user request)
+- **Outcome:** With "Download call audio / video (Fireflies)" turned on, each Fireflies call's recording is saved during sync into a `Recordings` folder per project, and shown on the meeting.
+- **Scope:** `audio_url` / `video_url` queries; `RecordingService` and `RecordingDownloader` (streamed, temp file then rename, stall timeout, HTTPS only, safe extensions); `MeetingRecording` entity and migration; six export settings; backfill of already-imported calls; moving recordings on reassignment; open endpoint; Recordings tab; Settings fields; docs.
+- **Out of scope:** Granola and WhisperAI recordings; links from the Markdown files to the recording; size limits, quotas or cleanup; downloading on demand from the UI.
+- **Dependencies:** One additive migration (`AddMeetingRecordings`). Fireflies Pro plan or higher for the user.
+- **Likely components/files:** `src/Chroniq.Application/Recordings/`, `src/Chroniq.Infrastructure/Recordings/`, `FirefliesApiClient.cs`, `MeetingProcessor.cs`, `SyncEngine.cs`, `ExportLayout.cs`, `MeetingService.cs`, `MeetingsController.cs`, `frontend/src/pages/{MeetingDetailPage,SettingsPage}.tsx`.
+- **Acceptance criteria:**
+  - [x] AC-1: Off by default; nothing is requested or written when off (`Recordings_are_not_requested_unless_enabled`).
+  - [x] AC-2: Audio and video land in `Recordings` next to the call's other files, per project/Unassigned/Shared (`Audio_and_video_are_downloaded_into_a_recordings_folder`, `Recording_follows_the_project_the_call_is_assigned_to`).
+  - [x] AC-3: A plan without access, a missing link or a failed download never fails the call; failures are retried; unavailable ones are not asked again (`A_plan_without_recording_access_…`, `A_failed_download_…`, `Missing_recordings_are_final_only_once_…`).
+  - [x] AC-4: Calls already imported are backfilled without refetching the transcript (`Turning_recordings_on_later_…`).
+  - [x] AC-5: The signed link is never stored or echoed, only HTTPS is fetched, and no unsafe file extension is written (`RecordingDownloaderTests`).
+  - [x] AC-6: The Recordings tab shows status, size and a Play action (`pages.test.tsx`).
+  - [ ] AC-7: A real download with a Pro key (Q-013).
+- **Test plan:** `dotnet build`, `dotnet test`, `dotnet format --verify-no-changes`, `npx tsc --noEmit`, `npx vitest run`. All passed on 2026-11-12.
+- **Risks:** R-011 (disk use), Q-013.
+- **Evidence/related docs:** FEAT-024, ADR-012, `docs/FIREFLIES_API.md`.
+
 ### PIDA-018 — Versioning and safe upgrades
 - **Status:** Proposed
 - **Priority:** P3

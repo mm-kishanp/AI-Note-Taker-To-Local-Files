@@ -4,7 +4,7 @@ import {
 import { modals } from '@mantine/modals';
 import {
   IconArrowLeft, IconBan, IconCloudDownload, IconDots, IconExternalLink, IconFileExport, IconFolderOpen, IconFileText,
-  IconRefresh, IconSwitchHorizontal,
+  IconPlayerPlay, IconRefresh, IconSwitchHorizontal,
 } from '@tabler/icons-react';
 import { type ReactNode, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
@@ -18,10 +18,10 @@ import { LoadingRows } from '../components/QueryState';
 import { ReassignModal } from '../components/ReassignModal';
 import { ReExportModal } from '../components/ReExportModal';
 import { StatusBadge } from '../components/StatusBadge';
-import { useAssignMeeting, useMeeting, useOpenExport, useReclassify, useRetryMeeting, useTranscript } from '../hooks/useMeetings';
+import { useAssignMeeting, useMeeting, useOpenExport, useOpenRecording, useReclassify, useRetryMeeting, useTranscript } from '../hooks/useMeetings';
 import { ApiError } from '../services/api';
-import type { MeetingDetailDto } from '../types/api';
-import { formatDateTime, formatTime, humanize } from '../utils/format';
+import type { MeetingDetailDto, RecordingStatus } from '../types/api';
+import { formatBytes, formatDateTime, formatTime, humanize } from '../utils/format';
 import { notifyError, notifyInfo, notifySuccess } from '../utils/notify';
 
 function Field({ label, children }: { label: string; children: ReactNode }) {
@@ -34,6 +34,12 @@ function Field({ label, children }: { label: string; children: ReactNode }) {
     </div>
   );
 }
+
+const RECORDING_STATUS: Record<RecordingStatus, { color: string; label: string }> = {
+  Downloaded: { color: 'green', label: 'Downloaded' },
+  Failed: { color: 'red', label: 'Failed' },
+  Unavailable: { color: 'gray', label: 'Not available' },
+};
 
 function Transcript({ id, total, source }: { id: string; total: number; source: string }) {
   const [page, setPage] = useState(1);
@@ -153,6 +159,7 @@ export function MeetingDetailPage() {
   const retry = useRetryMeeting();
   const assign = useAssignMeeting();
   const openExport = useOpenExport();
+  const openRecording = useOpenRecording();
   const [reassignOpen, setReassignOpen] = useState(false);
   const [reExportOpen, setReExportOpen] = useState(false);
   const [conflictRecord, setConflictRecord] = useState<string | null>(null);
@@ -206,6 +213,9 @@ export function MeetingDetailPage() {
 
   const doOpen = (recordId: string, folder: boolean) =>
     openExport.mutate({ id, recordId, folder }, { onError: (e) => notifyError(e, 'Could not open') });
+
+  const doOpenRecording = (recordingId: string, folder: boolean) =>
+    openRecording.mutate({ id, recordingId, folder }, { onError: (e) => notifyError(e, 'Could not open') });
 
   return (
     <>
@@ -417,6 +427,7 @@ export function MeetingDetailPage() {
         <Tabs defaultValue="files" keepMounted={false}>
           <Tabs.List>
             <Tabs.Tab value="files">Exported files ({currentExports.length})</Tabs.Tab>
+            {d.recordings.length > 0 && <Tabs.Tab value="recordings">Recordings ({d.recordings.length})</Tabs.Tab>}
             {m.source !== 'WhisperAi' && (
               <Tabs.Tab value="summary">{m.source === 'Fireflies' ? 'Fireflies AI notes' : 'Granola summary'}</Tabs.Tab>
             )}
@@ -514,6 +525,79 @@ export function MeetingDetailPage() {
                 </Table>
               </Table.ScrollContainer>
             )}
+          </Tabs.Panel>
+
+          <Tabs.Panel value="recordings" pt="md">
+            <Table.ScrollContainer minWidth={700}>
+              <Table verticalSpacing="xs">
+                <Table.Thead>
+                  <Table.Tr>
+                    <Table.Th>Recording</Table.Th>
+                    <Table.Th>File</Table.Th>
+                    <Table.Th>Status</Table.Th>
+                    <Table.Th>Size</Table.Th>
+                    <Table.Th>Actions</Table.Th>
+                  </Table.Tr>
+                </Table.Thead>
+                <Table.Tbody>
+                  {d.recordings.map((r) => (
+                    <Table.Tr key={r.id}>
+                      <Table.Td>{r.kind}</Table.Td>
+                      <Table.Td maw={420}>
+                        {r.absolutePath ? <PathText path={r.absolutePath} size="xs" /> : <Text size="xs" c="dimmed">—</Text>}
+                        {r.status === 'Downloaded' && !r.fileExists && (
+                          <Text size="xs" c="red">
+                            File missing on disk. Re-export with “recreate missing files” to download it again.
+                          </Text>
+                        )}
+                        {r.lastError && (
+                          <Text size="xs" c={r.status === 'Failed' ? 'red' : 'dimmed'}>
+                            {r.lastError}
+                          </Text>
+                        )}
+                      </Table.Td>
+                      <Table.Td>
+                        <Badge color={RECORDING_STATUS[r.status].color} variant="light">
+                          {RECORDING_STATUS[r.status].label}
+                        </Badge>
+                        {r.status === 'Failed' && (
+                          <Text size="xs" c="dimmed">
+                            {r.attempts} attempt{r.attempts === 1 ? '' : 's'}
+                          </Text>
+                        )}
+                      </Table.Td>
+                      <Table.Td style={{ whiteSpace: 'nowrap' }}>{r.status === 'Downloaded' ? formatBytes(r.sizeBytes) : '—'}</Table.Td>
+                      <Table.Td>
+                        <Group gap={4} wrap="nowrap">
+                          <Tooltip label="Play">
+                            <Button
+                              size="compact-xs"
+                              variant="default"
+                              disabled={!r.fileExists}
+                              onClick={() => doOpenRecording(r.id, false)}
+                              aria-label={`Play ${r.kind.toLowerCase()} recording`}
+                            >
+                              <IconPlayerPlay size={14} />
+                            </Button>
+                          </Tooltip>
+                          <Tooltip label="Open folder">
+                            <Button
+                              size="compact-xs"
+                              variant="default"
+                              disabled={!r.fileExists}
+                              onClick={() => doOpenRecording(r.id, true)}
+                              aria-label={`Open ${r.kind.toLowerCase()} recording folder`}
+                            >
+                              <IconFolderOpen size={14} />
+                            </Button>
+                          </Tooltip>
+                        </Group>
+                      </Table.Td>
+                    </Table.Tr>
+                  ))}
+                </Table.Tbody>
+              </Table>
+            </Table.ScrollContainer>
           </Tabs.Panel>
 
           <Tabs.Panel value="summary" pt="md">

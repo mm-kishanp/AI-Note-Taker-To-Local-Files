@@ -372,11 +372,14 @@ function ExportSection({ settings }: { settings: SettingsDto }) {
         <Group gap="xs"><Text size="sm" w={110}>Root</Text><PathText path={settings.resolvedPaths.root} /></Group>
         <Group gap="xs"><Text size="sm" w={110}>Notes</Text><PathText path={settings.resolvedPaths.notesRoot} /></Group>
         <Group gap="xs"><Text size="sm" w={110}>Transcripts</Text><PathText path={settings.resolvedPaths.transcriptsRoot} /></Group>
+        <Group gap="xs"><Text size="sm" w={110}>Recordings</Text><PathText path={settings.resolvedPaths.recordingsRoot} /></Group>
       </Stack>
       <PathField label="Export root" description="Absolute, or relative to the app's base directory." value={v.rootDirectory} onChange={(p) => form.patch({ rootDirectory: p ?? '' })} />
       <SimpleGrid cols={{ base: 1, sm: 2 }}>
         <PathField label="Separate notes root (optional)" value={v.notesRootDirectory} optional onChange={(p) => form.patch({ notesRootDirectory: p })} />
         <PathField label="Separate transcripts root (optional)" value={v.transcriptsRootDirectory} optional onChange={(p) => form.patch({ transcriptsRootDirectory: p })} />
+        <PathField label="Separate recordings root (optional)" description="Recordings are large; keep them on a roomy drive." value={v.recordingsRootDirectory} optional onChange={(p) => form.patch({ recordingsRootDirectory: p })} />
+        <div />
         <TextInput label="Project directory" value={v.projectDirectoryTemplate} onChange={text('projectDirectoryTemplate')} ff="monospace" />
         <TextInput label="File name" description="Without .md" value={v.filenameTemplate} onChange={text('filenameTemplate')} ff="monospace" />
         <TextInput label="Notes directory" value={v.notesDirectoryTemplate} onChange={text('notesDirectoryTemplate')} ff="monospace" />
@@ -385,10 +388,25 @@ function ExportSection({ settings }: { settings: SettingsDto }) {
         <TextInput label="Unassigned transcripts" value={v.unassignedTranscriptsDirectory} onChange={text('unassignedTranscriptsDirectory')} ff="monospace" />
         <TextInput label="Shared notes" value={v.sharedNotesDirectory} onChange={text('sharedNotesDirectory')} ff="monospace" />
         <TextInput label="Shared transcripts" value={v.sharedTranscriptsDirectory} onChange={text('sharedTranscriptsDirectory')} ff="monospace" />
+        <TextInput label="Recordings directory" value={v.recordingsDirectoryTemplate} onChange={text('recordingsDirectoryTemplate')} ff="monospace" />
+        <TextInput label="Unassigned recordings" value={v.unassignedRecordingsDirectory} onChange={text('unassignedRecordingsDirectory')} ff="monospace" />
+        <TextInput label="Shared recordings" value={v.sharedRecordingsDirectory} onChange={text('sharedRecordingsDirectory')} ff="monospace" />
       </SimpleGrid>
       <SimpleGrid cols={{ base: 1, sm: 2 }}>
         <Checkbox label="Export notes" checked={v.exportNotes} onChange={flag('exportNotes')} />
         <Checkbox label="Export transcripts" checked={v.exportTranscripts} onChange={flag('exportTranscripts')} />
+        <Checkbox
+          label="Download call audio (Fireflies)"
+          description="Saved to the project's Recordings folder during sync. Needs a Fireflies Pro plan or higher."
+          checked={v.exportAudio}
+          onChange={flag('exportAudio')}
+        />
+        <Checkbox
+          label="Download call video (Fireflies)"
+          description="Needs a Pro plan or higher and “Record meeting video” turned on in Fireflies. Video files can be very large."
+          checked={v.exportVideo}
+          onChange={flag('exportVideo')}
+        />
         <Checkbox label="Move unmodified files when a meeting is reassigned" checked={v.moveFilesOnReassignment} onChange={flag('moveFilesOnReassignment')} />
         <Checkbox label="Link Granola photo attachments (signed URLs)" checked={v.includeAttachmentLinks} onChange={flag('includeAttachmentLinks')} />
         <Checkbox label="Maintain README.md and PROJECT_CONTEXT.md per project" checked={v.generateProjectContext} onChange={flag('generateProjectContext')} />

@@ -56,6 +56,9 @@ Last reviewed: 2026-10-28
 | GET | `/api/meetings/{id}/exports/{recordId}/conflict` | Conflict review (local vs regenerated) | Local/Token | — | `ConflictReviewDto` | `:47-48` |
 | POST | `/api/meetings/{id}/exports/{recordId}/resolve` | Resolve conflict | Local/Token + CSRF | `ResolveConflictRequest(Resolution)` | `MeetingDetailDto` | `:50-52` |
 | POST | `/api/meetings/{id}/exports/{recordId}/open` | Open exported file/folder in OS | Local/Token + CSRF | `folder` | 204 | `:54-61` |
+| POST | `/api/meetings/{id}/recordings/{recordingId}/open` | Open a downloaded Fireflies recording (or its folder) in the OS; only for `Downloaded` rows, path must be under an export root | Local/Token + CSRF | `folder` | 204 | `MeetingsController.OpenRecording` |
+
+`GET /api/meetings/{id}` (`MeetingDetailDto`) now also returns `recordings` (`RecordingDto[]`: kind, status, paths, `fileExists`, size, attempts, last error). `GET /api/settings` returns the six new `export` recordings fields and `resolvedPaths.recordingsRoot`.
 | GET | `/api/unassigned` | Review queue | Local/Token | `page`, `pageSize` | `PagedResponse<UnassignedItemDto>` | `:75-77` |
 | POST | `/api/unassigned/{id}/assign` | Assign from review | Local/Token + CSRF | `AssignMeetingRequest` | `MeetingDetailDto` | `:79-80` |
 | POST | `/api/unassigned/{id}/mappings` | Save participant/speaker mapping from a meeting and preview matches | Local/Token + CSRF | `SaveMappingFromReviewRequest` | `TestMappingResultDto` | `:83-84` |

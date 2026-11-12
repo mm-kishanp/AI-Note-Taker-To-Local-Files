@@ -4,6 +4,7 @@ using Chroniq.Application.Fireflies;
 using Chroniq.Application.Granola;
 using Chroniq.Application.Interfaces;
 using Chroniq.Application.Meetings;
+using Chroniq.Application.Recordings;
 using Chroniq.Application.WhisperAi;
 using Chroniq.Domain.Entities;
 using Chroniq.Domain.Enums;
@@ -33,6 +34,7 @@ public sealed class MeetingProcessor(
     IWhisperAiApiClient whisperAi,
     ClassificationService classification,
     MeetingExporter exporter,
+    RecordingService recordings,
     IClock clock,
     ILogger<MeetingProcessor> logger)
 {
@@ -50,7 +52,7 @@ public sealed class MeetingProcessor(
             .Include(m => m.ExportRecords)
             .Include(m => m.ProjectAssignments)
             .Include(m => m.Participants)
-
+            .Include(m => m.Recordings)
             .FirstOrDefaultAsync(m => item.MeetingId != null ? m.Id == item.MeetingId : m.GranolaNoteId == item.GranolaNoteId, ct);
         var now = clock.UtcNow;
 
@@ -143,6 +145,16 @@ public sealed class MeetingProcessor(
         Interlocked.Add(ref counters.TranscriptsExported, outcome.TranscriptsWritten);
         Interlocked.Add(ref counters.FilesUpdated, outcome.FilesUpdated);
         Interlocked.Add(ref counters.Conflicts, outcome.Conflicts);
+
+        try
+        {
+            await recordings.SyncAsync(meeting, layout, ctx.ProjectInfos, exportMode, ct);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException and not GranolaApiException)
+        {
+            // A recording problem must never fail the meeting: its notes and transcript are already exported.
+            logger.LogWarning(ex, "Recording download for {NoteId} failed unexpectedly", meeting.GranolaNoteId);
+        }
 
         var fsErrors = outcome.Errors.Where(e => e.Category != ErrorCategory.TranscriptUnavailable).ToList();
         if (fsErrors.Count > 0)

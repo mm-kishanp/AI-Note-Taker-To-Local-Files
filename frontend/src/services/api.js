@@ -210,6 +210,7 @@ export const api = {
         conflict: (id, recordId) => request('GET', `/meetings/${enc(id)}/exports/${enc(recordId)}/conflict`),
         resolveConflict: (id, recordId, resolution) => request('POST', `/meetings/${enc(id)}/exports/${enc(recordId)}/resolve`, { body: { resolution } }),
         openExport: (id, recordId, folder) => request('POST', `/meetings/${enc(id)}/exports/${enc(recordId)}/open`, { query: { folder } }),
+        openRecording: (id, recordingId, folder) => request('POST', `/meetings/${enc(id)}/recordings/${enc(recordingId)}/open`, { query: { folder } }),
     },
     unassigned: {
         list: (page, pageSize) => request('GET', '/unassigned', { query: { page, pageSize } }),

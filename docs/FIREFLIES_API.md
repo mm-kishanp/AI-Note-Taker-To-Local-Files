@@ -13,15 +13,48 @@ Granola and Fireflies can be used together or separately. When both are configur
 
 ## API usage (read-only)
 
-The client uses only the official GraphQL endpoint `POST https://api.fireflies.ai/graphql` with `Authorization: Bearer <key>`. It sends three queries:
+The client uses only the official GraphQL endpoint `POST https://api.fireflies.ai/graphql` with `Authorization: Bearer <key>`. It sends these queries:
 
 | Query | Purpose |
 |---|---|
 | `user { name email }` | Connection test |
 | `transcripts(fromDate, limit, skip) { id title date }` | Lists calls, 50 per page (`limit` maximum) |
 | `transcript(id)` | Fetches one call: title, date, duration, `transcript_url`, `organizer_email`, `participants`, `meeting_attendees`, `user`, `sentences`, and `summary` (`overview`, `notes`, `shorthand_bullet`, `action_items`, `outline`, `keywords`, `topics_discussed`, `meeting_type`) |
+| `transcript(id) { audio_url }` / `{ video_url }` | A fresh download link for the recording. Only sent when audio or video download is turned on (see below) |
 
 The app never sends mutations.
+
+## Recordings (audio and video)
+
+Turn on **Settings → Export → Download call audio / video (Fireflies)** and each Fireflies call's recording is downloaded during sync, next to the call's other files:
+
+```text
+ChroniqKnowledge/Projects/MotorDealerApp/Recordings/2026-10-26-Client-Requirement-Discussion-audio.mp3
+ChroniqKnowledge/Projects/MotorDealerApp/Recordings/2026-10-26-Client-Requirement-Discussion-video.mp4
+```
+
+Audio and video are separate switches and are off by default. Unassigned and Shared calls go to `Unassigned/Recordings` and `Shared/Recordings`. A call shared by several projects keeps its recording once, in the primary project's folder. The folders and an optional separate recordings root are set under Export settings.
+
+What Fireflies requires:
+
+- **A Pro plan or higher** for both `audio_url` and `video_url`. On other plans the recording is marked *Not available* and is not requested again.
+- **Video** also needs "Record meeting video" turned on in Fireflies.
+- Links **expire after 24 hours**, so the app asks for a fresh link right before each download. The link is never saved to disk or the database, and never logged.
+- Each link request costs one API request and is paced like the others (about 1.1 s apart).
+
+How downloads behave:
+
+- The link points at a file host, not the Fireflies API, so the API key is never sent with the download.
+- The file is streamed to a temporary file and renamed only when complete, so an interrupted download never leaves a partial recording. A download is abandoned if no data arrives for 60 seconds.
+- Only known media extensions (`.mp3`, `.m4a`, `.mp4`, `.webm`, and similar) are used for the file name. Anything else falls back to `.mp3` or `.mp4`.
+- A recording problem never fails the call: its notes and transcript are exported regardless. Failures are shown on the meeting's **Recordings** tab and retried on later syncs, up to 5 attempts.
+- A call that Fireflies has not finished processing (younger than 2 days, no link yet) is simply asked again on the next sync. After that, "no link" is final.
+- Files you move or delete are not downloaded again by a normal sync. To recreate missing files, use **Re-export → recreate missing files** (reconcile) on the meeting, or a Reconcile sync.
+- Reassigning a call to another project moves its recording with it, unless "Move unmodified files when a meeting is reassigned" is off.
+
+**Calls imported before you turned this on:** a normal incremental sync only looks back a few days (*Fireflies look-back*). Run a **Full** sync, or a Reconcile, to download recordings for older calls.
+
+Recordings are large. A one-hour video is often several hundred MB, so check free space on the recordings drive first.
 
 ### Rate limits and errors
 

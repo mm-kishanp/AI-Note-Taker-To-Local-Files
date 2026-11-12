@@ -123,6 +123,27 @@ public class Meeting
     public List<MeetingParticipant> Participants { get; set; } = [];
     public List<MeetingProjectAssignment> ProjectAssignments { get; set; } = [];
     public List<ExportRecord> ExportRecords { get; set; } = [];
+    public List<MeetingRecording> Recordings { get; set; } = [];
+}
+
+/// <summary>
+/// A call recording downloaded from the source (Fireflies audio or video). Tracked apart from
+/// <see cref="ExportRecord"/> because recordings are large binary files that are never rendered or
+/// compared as Markdown. The path is relative to the recordings root so the repository stays portable.
+/// </summary>
+public class MeetingRecording
+{
+    public Guid Id { get; set; } = Guid.NewGuid();
+    public Guid MeetingId { get; set; }
+    public RecordingKind Kind { get; set; }
+    public RecordingStatus Status { get; set; }
+    public string RelativePath { get; set; } = "";
+    public long? SizeBytes { get; set; }
+    /// <summary>Failed download attempts so far; reset by a success.</summary>
+    public int Attempts { get; set; }
+    public string? LastError { get; set; }
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 }
 
 public class MeetingParticipant

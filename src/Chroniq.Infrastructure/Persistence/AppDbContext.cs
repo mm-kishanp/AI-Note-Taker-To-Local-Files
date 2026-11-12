@@ -19,6 +19,7 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
     public DbSet<MeetingParticipant> MeetingParticipants => Set<MeetingParticipant>();
     public DbSet<MeetingProjectAssignment> MeetingProjectAssignments => Set<MeetingProjectAssignment>();
     public DbSet<ExportRecord> ExportRecords => Set<ExportRecord>();
+    public DbSet<MeetingRecording> MeetingRecordings => Set<MeetingRecording>();
     public DbSet<SyncRun> SyncRuns => Set<SyncRun>();
     public DbSet<SyncRunItem> SyncRunItems => Set<SyncRunItem>();
     public DbSet<ApplicationSetting> ApplicationSettings => Set<ApplicationSetting>();
@@ -86,6 +87,14 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
             e.HasMany(x => x.Participants).WithOne().HasForeignKey(p => p.MeetingId).OnDelete(DeleteBehavior.Cascade);
             e.HasMany(x => x.ProjectAssignments).WithOne().HasForeignKey(p => p.MeetingId).OnDelete(DeleteBehavior.Cascade);
             e.HasMany(x => x.ExportRecords).WithOne(r => r.Meeting).HasForeignKey(r => r.MeetingId).OnDelete(DeleteBehavior.Cascade);
+            e.HasMany(x => x.Recordings).WithOne().HasForeignKey(r => r.MeetingId).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        b.Entity<MeetingRecording>(e =>
+        {
+            e.Property(x => x.RelativePath).HasMaxLength(1000).IsRequired();
+            e.Property(x => x.LastError).HasMaxLength(1000);
+            e.HasIndex(x => new { x.MeetingId, x.Kind }).IsUnique();
         });
 
         b.Entity<MeetingParticipant>(e =>

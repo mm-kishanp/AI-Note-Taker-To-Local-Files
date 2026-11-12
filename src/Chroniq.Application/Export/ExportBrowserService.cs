@@ -89,7 +89,8 @@ public sealed class ExportBrowserService(ISettingsService settings, IAppPaths pa
     public void OpenAbsoluteUnderRoots(ExportLayout layout, string fullPath)
     {
         if (!shell.IsSupported) throw ValidationException.Single("path", "Opening files is only supported when the app runs on your desktop.");
-        if (!SafePath.IsUnder(layout.NotesRoot, fullPath) && !SafePath.IsUnder(layout.TranscriptsRoot, fullPath) && !SafePath.IsUnder(layout.Root, fullPath))
+        if (!SafePath.IsUnder(layout.NotesRoot, fullPath) && !SafePath.IsUnder(layout.TranscriptsRoot, fullPath)
+            && !SafePath.IsUnder(layout.RecordingsRoot, fullPath) && !SafePath.IsUnder(layout.Root, fullPath))
             throw ValidationException.Single("path", "Path is outside the export roots.");
         if (!File.Exists(fullPath) && !Directory.Exists(fullPath)) throw new NotFoundException("Path not found.");
         shell.Open(fullPath);

@@ -4,6 +4,7 @@ using Chroniq.Application.Export;
 using Chroniq.Application.Fireflies;
 using Chroniq.Application.Granola;
 using Chroniq.Application.Interfaces;
+using Chroniq.Application.Recordings;
 using Chroniq.Application.Synchronization;
 using Chroniq.Application.WhisperAi;
 using Chroniq.Infrastructure.Ai;
@@ -11,6 +12,7 @@ using Chroniq.Infrastructure.Fireflies;
 using Chroniq.Infrastructure.Granola;
 using Chroniq.Infrastructure.Logging;
 using Chroniq.Infrastructure.Persistence;
+using Chroniq.Infrastructure.Recordings;
 using Chroniq.Infrastructure.Security;
 using Chroniq.Infrastructure.WhisperAi;
 using Microsoft.EntityFrameworkCore;
@@ -45,6 +47,12 @@ public static class DependencyInjection
         services.AddHttpClient<IFirefliesApiClient, FirefliesApiClient>(c =>
         {
             c.Timeout = TimeSpan.FromSeconds(100);
+            c.DefaultRequestHeaders.UserAgent.ParseAdd("Chroniq/1.0");
+        });
+        // No default credentials: recording links are signed URLs on a file host, not the Fireflies API.
+        services.AddHttpClient<IRecordingDownloader, RecordingDownloader>(c =>
+        {
+            c.Timeout = TimeSpan.FromSeconds(100); // waiting for the response headers; the body is bounded by a stall timeout
             c.DefaultRequestHeaders.UserAgent.ParseAdd("Chroniq/1.0");
         });
         services.AddSingleton<WhisperAiRequestThrottle>();

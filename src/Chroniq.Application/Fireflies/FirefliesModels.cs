@@ -81,6 +81,13 @@ public interface IFirefliesApiClient
 
     /// <summary>Returns the call with its sentences and AI summary, or null when it no longer exists / is inaccessible.</summary>
     Task<FirefliesTranscript?> GetTranscriptAsync(string transcriptId, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// A freshly signed download link for the call's recording, or null when Fireflies has none (not recorded, or
+    /// not processed yet). The link expires after 24 hours, so download it right away and never store it.
+    /// Needs a Pro plan or higher: other plans fail with a <see cref="ErrorCategory.Permission"/> error.
+    /// </summary>
+    Task<string?> GetRecordingUrlAsync(string transcriptId, RecordingKind kind, CancellationToken cancellationToken);
 }
 
 /// <summary>Reads a field documented as a string that Fireflies may also return as a list of strings.</summary>

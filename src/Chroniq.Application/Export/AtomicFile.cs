@@ -105,14 +105,15 @@ public static class AtomicFile
         };
     }
 
-    private static void EnsureDiskSpace(string dir, long bytes)
+    /// <param name="factor">Free space required as a multiple of <paramref name="bytes"/>. 2 leaves room for the temp file plus the rename; a streamed download needs only 1.</param>
+    public static void EnsureDiskSpace(string dir, long bytes, int factor = 2)
     {
         try
         {
             var root = Path.GetPathRoot(Path.GetFullPath(dir));
             if (string.IsNullOrEmpty(root)) return;
             var drive = new DriveInfo(root);
-            if (drive.IsReady && drive.AvailableFreeSpace < bytes * 2 + 1024 * 1024)
+            if (drive.IsReady && drive.AvailableFreeSpace < bytes * factor + 1024 * 1024)
                 throw new ExportFileException(ErrorCategory.DiskSpace, $"Not enough free space on {drive.Name}.");
         }
         catch (ArgumentException)

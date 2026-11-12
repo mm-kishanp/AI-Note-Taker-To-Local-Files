@@ -39,6 +39,7 @@ There are no accounts, roles or per-user data (Verified).
 - **FR-013 (FEAT-015):** Given a new API key, when saved with validation and the source rejects it (401), then the previous key is restored and the full key is never returned by the API. *Tests:* `Credentials_are_masked_…`, `Invalid_key_input_…`.
 - **FR-014 (FEAT-020):** Given a state-changing API request without `X-Chroniq-Request: 1`, then it is rejected with 403. *Tests:* `State_changing_requests_require_the_csrf_header`.
 - **FR-015 (FEAT-001):** Given a meeting deleted or no longer accessible at the source, when syncing, then its exported files are kept and it is marked Deleted/Inaccessible. *Tests:* `Deleted_or_inaccessible_notes_keep_exported_files`.
+- **FR-016 (FEAT-024):** Given audio and/or video download is enabled and a Fireflies key has access, when a call is synced, then its recording is saved under the call's project (or Unassigned/Shared) `Recordings` folder and shown on the meeting; with the switches off nothing is requested; a plan without access, a missing link or a failed download never fails the call and is shown on the recording. *Tests:* `FirefliesRecordingTests`, `RecordingDownloaderTests`.
 
 ## Non-functional requirements
 

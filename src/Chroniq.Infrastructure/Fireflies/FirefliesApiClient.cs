@@ -84,6 +84,27 @@ public sealed class FirefliesApiClient(
         return data.Transcripts;
     }
 
+    // Separate from TranscriptQuery on purpose: audio_url/video_url need a paid plan, so asking for them in
+    // the transcript query could make the whole transcript fetch fail for plans without access.
+    private const string AudioUrlQuery = "query Audio($id: String!) { transcript(id: $id) { audio_url } }";
+    private const string VideoUrlQuery = "query Video($id: String!) { transcript(id: $id) { video_url } }";
+
+    public async Task<string?> GetRecordingUrlAsync(string transcriptId, RecordingKind kind, CancellationToken ct)
+    {
+        ValidateId(transcriptId);
+        try
+        {
+            var data = await SendAsync<RecordingUrlData>(kind == RecordingKind.Audio ? AudioUrlQuery : VideoUrlQuery,
+                new Dictionary<string, object?> { ["id"] = transcriptId }, ct);
+            var url = kind == RecordingKind.Audio ? data?.Transcript?.AudioUrl : data?.Transcript?.VideoUrl;
+            return string.IsNullOrWhiteSpace(url) ? null : url;
+        }
+        catch (FirefliesApiException ex) when (ex.Category == ErrorCategory.NotFound)
+        {
+            return null;
+        }
+    }
+
     public async Task<FirefliesTranscript?> GetTranscriptAsync(string transcriptId, CancellationToken ct)
     {
         ValidateId(transcriptId);
@@ -260,4 +281,12 @@ public sealed class FirefliesApiClient(
     private sealed record TranscriptsData([property: JsonPropertyName("transcripts")] List<FirefliesTranscriptSummary>? Transcripts);
 
     private sealed record TranscriptData([property: JsonPropertyName("transcript")] FirefliesTranscript? Transcript);
+
+    private sealed record RecordingUrlData([property: JsonPropertyName("transcript")] RecordingUrls? Transcript);
+
+    private sealed record RecordingUrls
+    {
+        [JsonPropertyName("audio_url")] public string? AudioUrl { get; init; }
+        [JsonPropertyName("video_url")] public string? VideoUrl { get; init; }
+    }
 }

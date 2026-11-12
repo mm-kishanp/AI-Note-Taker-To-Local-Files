@@ -23,6 +23,15 @@ public sealed record ExportSettings
     public string FilenameTemplate { get; init; } = "{MeetingDate}-{MeetingTitle}";
     public bool ExportNotes { get; init; } = true;
     public bool ExportTranscripts { get; init; } = true;
+    /// <summary>Download the audio of each Fireflies call during sync. Needs a Fireflies Pro plan or higher.</summary>
+    public bool ExportAudio { get; init; }
+    /// <summary>Download the video of each Fireflies call during sync. Needs Pro or higher and "Record meeting video" turned on in Fireflies.</summary>
+    public bool ExportVideo { get; init; }
+    /// <summary>Optional separate root for recordings (they are large). Null/empty uses <see cref="RootDirectory"/>.</summary>
+    public string? RecordingsRootDirectory { get; init; }
+    public string RecordingsDirectoryTemplate { get; init; } = "{ProjectDirectory}/Recordings";
+    public string UnassignedRecordingsDirectory { get; init; } = "Unassigned/Recordings";
+    public string SharedRecordingsDirectory { get; init; } = "Shared/Recordings";
     public bool IncludeAttachmentLinks { get; init; } = true;
     public ConflictPolicy ConflictPolicy { get; init; } = ConflictPolicy.PreserveUserEdits;
     /// <summary>When a meeting is reassigned, move its unmodified generated files to the new location.</summary>

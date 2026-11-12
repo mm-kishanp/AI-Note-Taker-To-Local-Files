@@ -14,6 +14,7 @@ public interface IAppDbContext
     DbSet<MeetingParticipant> MeetingParticipants { get; }
     DbSet<MeetingProjectAssignment> MeetingProjectAssignments { get; }
     DbSet<ExportRecord> ExportRecords { get; }
+    DbSet<MeetingRecording> MeetingRecordings { get; }
     DbSet<SyncRun> SyncRuns { get; }
     DbSet<SyncRunItem> SyncRunItems { get; }
     DbSet<ApplicationSetting> ApplicationSettings { get; }

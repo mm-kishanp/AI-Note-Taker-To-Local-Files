@@ -102,7 +102,7 @@ public sealed class SettingsController(ISettingsService settings, IAppPaths path
         try
         {
             var layout = new ExportLayout(s.Export, paths.BaseDirectory);
-            resolved = new ResolvedPathsDto(layout.Root, layout.NotesRoot, layout.TranscriptsRoot, paths.BaseDirectory);
+            resolved = new ResolvedPathsDto(layout.Root, layout.NotesRoot, layout.TranscriptsRoot, paths.BaseDirectory, layout.RecordingsRoot);
         }
         catch (ArgumentException)
         {

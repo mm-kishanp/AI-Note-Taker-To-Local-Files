@@ -60,6 +60,15 @@ public sealed class MeetingsController(MeetingService meetings, SyncCoordinator 
         return NoContent();
     }
 
+    [HttpPost("{id:guid}/recordings/{recordingId:guid}/open")]
+    public async Task<IActionResult> OpenRecording(Guid id, Guid recordingId, [FromQuery] bool folder, CancellationToken ct)
+    {
+        var path = await meetings.RecordingFilePathAsync(id, recordingId, ct);
+        var layout = await LayoutFor(ct);
+        browser.OpenAbsoluteUnderRoots(layout, folder ? Path.GetDirectoryName(path)! : path);
+        return NoContent();
+    }
+
     private async Task<ExportLayout> LayoutFor(CancellationToken ct)
     {
         var settings = HttpContext.RequestServices.GetRequiredService<Application.Interfaces.ISettingsService>();

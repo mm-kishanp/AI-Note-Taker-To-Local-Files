@@ -186,6 +186,22 @@ export interface ExportRecordDto {
   lastError: string | null;
 }
 
+export type RecordingKind = 'Audio' | 'Video';
+export type RecordingStatus = 'Downloaded' | 'Failed' | 'Unavailable';
+
+export interface RecordingDto {
+  id: string;
+  kind: RecordingKind;
+  status: RecordingStatus;
+  relativePath: string;
+  absolutePath: string;
+  fileExists: boolean;
+  sizeBytes: number | null;
+  attempts: number;
+  lastError: string | null;
+  updatedAt: string;
+}
+
 export interface SyncRunItemDto {
   id: string;
   syncRunId: string;
@@ -221,6 +237,7 @@ export interface MeetingDetailDto {
   failureCount: number;
   nextRetryAt: string | null;
   lastErrorCategory: ErrorCategory;
+  recordings: RecordingDto[];
 }
 
 export interface TranscriptSegmentDto {
@@ -502,6 +519,12 @@ export interface ExportSettings {
   filenameTemplate: string;
   exportNotes: boolean;
   exportTranscripts: boolean;
+  exportAudio: boolean;
+  exportVideo: boolean;
+  recordingsRootDirectory: string | null;
+  recordingsDirectoryTemplate: string;
+  unassignedRecordingsDirectory: string;
+  sharedRecordingsDirectory: string;
   includeAttachmentLinks: boolean;
   conflictPolicy: ConflictPolicy;
   moveFilesOnReassignment: boolean;
@@ -549,6 +572,7 @@ export interface ResolvedPathsDto {
   notesRoot: string;
   transcriptsRoot: string;
   baseDirectory: string;
+  recordingsRoot: string;
 }
 
 export interface SettingsDto {

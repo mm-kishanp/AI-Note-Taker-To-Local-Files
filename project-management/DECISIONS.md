@@ -101,4 +101,13 @@ No ADR folder existed before the 2026-10-28 audit. ADR-001 – ADR-007 record pr
 - **Evidence/tests:** `Legacy_csrf_header_from_before_the_rename_is_still_accepted`, `Cleanup_also_removes_temp_files_from_before_the_rename`, `Project_context_upgrades_markers_from_before_the_rename`.
 - **Revisit when:** All known installs have run a CHRONIQ build once. The legacy fallbacks can then be removed.
 
+## ADR-012 — Download Fireflies recordings as files tracked apart from Markdown exports
+- **Date:** 2026-11-12
+- **Status:** Accepted (requested by the user: audio and video as separate settings, downloaded automatically during sync, in a `Recordings` folder per project)
+- **Context:** Fireflies exposes `audio_url` and `video_url` (Pro plan or higher; links expire after 24 hours). Recordings are large binary files. `ExportRecord` is built around rendered Markdown that is hashed, compared and conflict-checked.
+- **Decision:** A new `MeetingRecording` table (one row per meeting and kind) records status, path, size and attempts. A new `RecordingService` runs after the Markdown export and can never fail the call. The link is requested right before each download with its own small query, so a plan without access cannot break the transcript fetch, and is never stored. Downloads stream to a temp file and are renamed when complete. Calls already imported are queued again (without refetching) when an enabled kind is missing or failed with attempts left.
+- **Alternatives:** Reuse `ExportRecord` with a third `ExportKind` (rejected: it would touch every Markdown-specific path, hash and conflict rule). Add the URLs to the transcript query (rejected: a Free plan would fail the whole fetch). Store the link and download later (rejected: it expires in 24 hours and is a secret). Download on demand from the UI (not chosen; automatic was requested).
+- **Consequences:** One additive migration. Markdown files do not link to recordings, so users' edited files are never rewritten. Disk use is unbounded (R-011). Older calls need a Full sync or Reconcile.
+- **Evidence:** PIDA-020, FEAT-024, `FirefliesRecordingTests`, `RecordingDownloaderTests`.
+- **Revisit when:** Recording sizes become a problem (add a cap or a start date), or another source offers recordings.
 Record meaningful decisions; do not create an ADR for every small implementation choice.
